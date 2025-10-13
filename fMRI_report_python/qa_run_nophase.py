@@ -44,6 +44,7 @@ from matplotlib.colors import Normalize
 import nibabel as nib
 from glob import glob
 import subprocess
+import json
 
 #from ukat.data import fetch
 from fMRI_report_python.functions import snr
@@ -72,7 +73,45 @@ def find_mask_file(directory):
             return os.path.join(directory, filename)
     return None
 
-def process_data_nophase(imgm_cla, imgm_affine, core_filename, output_dir, mask_data=None):
+# Function to read TR from BIDS JSON sidecar file
+def get_tr_from_json(nifti_path):
+    """
+    Read RepetitionTime from BIDS JSON sidecar file
+    
+    Parameters:
+    -----------
+    nifti_path : str
+        Path to the NIfTI file (e.g., sub001-task-rest-bold.nii.gz)
+        
+    Returns:
+    --------
+    float or None
+        RepetitionTime in seconds, or None if not found
+    """
+    # Construct JSON filename by replacing .nii.gz or .nii with .json
+    json_path = nifti_path.replace('.nii.gz', '.json').replace('.nii', '.json')
+    
+    if os.path.exists(json_path):
+        try:
+            with open(json_path, 'r') as f:
+                metadata = json.load(f)
+            
+            tr = metadata.get('RepetitionTime')
+            if tr is not None:
+                print(f"Found TR = {tr}s in JSON file: {json_path}")
+                return float(tr)
+            else:
+                print(f"RepetitionTime not found in JSON file: {json_path}")
+                return None
+                
+        except Exception as e:
+            print(f"Error reading JSON file {json_path}: {e}")
+            return None
+    else:
+        print(f"No JSON sidecar found at: {json_path}")
+        return None
+
+def process_data_nophase(imgm_cla, imgm_affine, core_filename, output_dir, mask_data=None, TR=None, nifti_path=None):
     # This is our big function
     # I had to condense all the functionality of the notebook into this one func, to make the for loop in the script easier
     # So, first it plots the mean images
@@ -408,18 +447,31 @@ def process_data_nophase(imgm_cla, imgm_affine, core_filename, output_dir, mask_
     plt.close()  # Close the plot to free up memory
 
     #### tSNR per unit time ######
-
-    TR = 1.4 #changed from 2 to 1.4 for MB3 bold data
-    ErnstScaling = 1 #TR2s T1 = 2132ms
-
-    # TR = 1.33
-    # ErnstScaling = 0.8155
-
-    # TR = 1
-    # ErnstScaling = 0.7071
-
-    # TR = 0.66
-    # ErnstScaling = 0.5745
+    
+    # Determine TR (RepetitionTime) from multiple sources
+    if TR is None and nifti_path is not None:
+        # Try to read TR from JSON sidecar file
+        TR = get_tr_from_json(nifti_path)
+    
+    if TR is None:
+        # Fall back to default TR if not found in JSON
+        TR = 1.4  # Default for MB3 BOLD data
+        print(f"Using default TR = {TR}s (no JSON file found or RepetitionTime not specified)")
+    else:
+        print(f"Using TR = {TR}s from JSON metadata")
+    
+    # Set Ernst angle scaling factor based on TR
+    # These are approximate values for typical T1 relaxation times
+    if TR <= 0.7:
+        ErnstScaling = 0.5745  # For very short TR
+    elif TR <= 1.0:
+        ErnstScaling = 0.7071  # For short TR  
+    elif TR <= 1.5:
+        ErnstScaling = 0.8155  # For medium TR
+    else:
+        ErnstScaling = 1.0     # For longer TR (TR >= 2s, T1 = 2132ms)
+    
+    print(f"Using Ernst scaling factor = {ErnstScaling} for TR = {TR}s")
 
     # Compute tSNR per unit time
     tsnr_unit_time_map = (tsnr_obj_cla.tsnr_map / np.sqrt(TR)) * ErnstScaling

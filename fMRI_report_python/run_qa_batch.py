@@ -110,7 +110,7 @@ def run_qa_analysis(base_path, subject, visit, session=None, task='rest', extens
                 mask_data = None
             
             # Run QA analysis
-            process_data_nophase(imgm_cla, imgm_cla_affine, core_filename, output_dir, mask_data)
+            process_data_nophase(imgm_cla, imgm_cla_affine, core_filename, output_dir, mask_data, TR=None, nifti_path=mag_file_path)
             print(f"✓ Successfully processed: {core_filename}")
             success_count += 1
             
