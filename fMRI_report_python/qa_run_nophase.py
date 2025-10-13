@@ -619,6 +619,62 @@ def process_data_nophase(imgm_cla, imgm_affine, core_filename, output_dir, mask_
 
     # The End
 
+def run_qa_single_path(mypathname, pathname_m, extension, filename_pattern):
+    """
+    Run QA analysis for a single path configuration
+    This function contains the main processing logic that was previously in __main__
+    """
+    core_filenames = set(
+        os.path.splitext(os.path.splitext(os.path.basename(file_path))[0])[0]  # Handle double extensions
+        for file_path in glob(os.path.join(pathname_m, filename_pattern + extension))
+    )
+
+    print("Files found:", glob(os.path.join(pathname_m, filename_pattern + extension)))
+    print("Core filenames:", core_filenames)
+    print("Now beginning loop")
+     
+    # Loop over each core filename found
+    for core_filename in core_filenames:
+
+        print(f"{core_filename}")
+
+        # Create an output directory for saving plots
+        output_directory = mypathname + 'qa_output_' + core_filename
+        os.makedirs(output_directory, exist_ok=True)
+        OUTPUT_DIR = os.path.abspath(output_directory)
+
+        print(f"{OUTPUT_DIR}")
+
+        # Create a dictionary to store loaded data for each core filename
+        file_data = {}
+
+        # Find the corresponding magnitude (.nii) and phase (_ph.nii) files for the current core filename
+        mag_file_path = os.path.join(pathname_m, core_filename + extension)
+        print(mag_file_path)
+        # Load magnitude data only
+        print('Loading just mag')
+        imgm_cla, imgm_cla_affine = load_data(mag_file_path)
+        #imgp_cla, imgp_cla_affine = load_data(phase_file_path)
+
+        print(mag_file_path)
+        #print(phase_file_path)
+
+        # MASK
+        mask_path = find_mask_file(pathname_m)
+        if mask_path:
+            print(f"Found mask: {mask_path}")
+            mask_data, mask_affine = load_data(mask_path)
+        else:
+            print("No mask file found.")
+            mask_data = None
+        
+        # Store loaded data in the dictionary with the core filename as the key
+        file_data[core_filename] = (imgm_cla)
+
+        # Process and plot data
+        #process_data_nophase(imgm_cla, imgm_cla_affine, core_filename, OUTPUT_DIR)
+        process_data_nophase(imgm_cla, imgm_cla_affine, core_filename, OUTPUT_DIR, mask_data)
+
 if __name__ == "__main__":
     # Location of data
     # I usually setup my data with a main folder, e.g. fMRI_data_sub01
@@ -636,13 +692,9 @@ if __name__ == "__main__":
 
     # Search pattern for filenames
     filename_pattern = '*task-rest-bold'
-    #
-    # Find all core filenames matching the pattern in the specified directory
-    #core_filenames = set(os.path.splitext(os.path.basename(file_path))[0] for file_path in glob(os.path.join(pathname_m, filename_pattern)))
-
-    #print(f"here are the {core_filenames}")
-
-    #print(f"{OUTPUT_DIR}/{output_filename})
+    
+    # Run the QA analysis
+    run_qa_single_path(mypathname, pathname_m, extension, filename_pattern)
 
     core_filenames = set(
         os.path.splitext(os.path.splitext(os.path.basename(file_path))[0])[0]  # Handle double extensions

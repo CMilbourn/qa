@@ -1,0 +1,28 @@
+# Configuration file for batch QA processing
+# This file defines the subjects and visits to process
+
+[DEFAULT]
+# Default settings that apply to all subjects unless overridden
+base_path = /Users/cmilbourn/Documents/Sweet_Data/Development_Data/Sweet_Data_BIDS_Dev
+extension = .nii.gz
+task = rest
+
+# Individual subjects
+[sub001]
+visit = visit001
+session = ses001
+
+[sub002]
+visit = visit001
+session = ses001
+
+[sub003]
+visit = visit001
+session = ses001
+task = task-motor  # Override default task for this subject
+
+# Example with different visit
+[sub001_v2]
+subject = sub001
+visit = visit002
+session = ses002

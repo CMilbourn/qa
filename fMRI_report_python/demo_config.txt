@@ -1,0 +1,19 @@
+# Demo configuration for your current data setup
+[DEFAULT]
+base_path = /Users/cmilbourn/Documents/Sweet_Data/Development_Data/Sweet_Data_BIDS_Dev
+extension = .nii.gz
+task = rest
+
+# Your current subject
+[sub001]
+visit = visit001
+session = ses001
+
+# Example of how you'd add more subjects
+# [sub002]
+# visit = visit001
+# session = ses001
+
+# [sub003]
+# visit = visit002  
+# session = ses002
