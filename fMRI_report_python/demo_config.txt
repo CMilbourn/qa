@@ -4,8 +4,12 @@ base_path = /Users/cmilbourn/Documents/Sweet_Data/Development_Data/Sweet_Data_BI
 extension = .nii.gz
 task = rest
 
-# Your current subject
+# Your current subjects
 [sub001]
+visit = visit001
+session = ses001
+
+[sub003]
 visit = visit001
 session = ses001
 
@@ -13,7 +17,3 @@ session = ses001
 # [sub002]
 # visit = visit001
 # session = ses001
-
-# [sub003]
-# visit = visit002  
-# session = ses002
