@@ -228,27 +228,39 @@ Available QA Images:
                             if len(images) == 1:
                                 # Single image - center it
                                 left = Inches(2)
-                                width = Inches(6)
-                                height = Inches(4.5)
+                                max_width = Inches(6)
+                                max_height = Inches(4.5)
                             elif len(images) == 2:
                                 # Two images side by side
                                 left = Inches(0.5 + (images_added * 4.5))
-                                width = Inches(4)
-                                height = Inches(3)
+                                max_width = Inches(4)
+                                max_height = Inches(3)
                             else:
                                 # Multiple images - smaller grid
                                 left = Inches(0.5 + (images_added % 2) * 4.5)
                                 if images_added >= 2:
                                     y_pos = Inches(4.0)
-                                width = Inches(4)
-                                height = Inches(2.5)
+                                max_width = Inches(4)
+                                max_height = Inches(2.5)
                             
-                            # Add image
-                            slide.shapes.add_picture(img_path, left, y_pos, width, height)
+                            # Add image with preserved aspect ratio
+                            pic = slide.shapes.add_picture(img_path, left, y_pos)
+                            
+                            # Scale to fit within max dimensions while preserving aspect ratio
+                            if pic.width > max_width:
+                                ratio = max_width / pic.width
+                                pic.width = max_width
+                                pic.height = int(pic.height * ratio)
+                            
+                            if pic.height > max_height:
+                                ratio = max_height / pic.height
+                                pic.height = max_height
+                                pic.width = int(pic.width * ratio)
+                            
                             images_added += 1
                             
                             # Add image caption
-                            caption_shape = slide.shapes.add_textbox(left, y_pos + height, width, Inches(0.3))
+                            caption_shape = slide.shapes.add_textbox(left, y_pos + pic.height, pic.width, Inches(0.3))
                             caption_frame = caption_shape.text_frame
                             caption_para = caption_frame.paragraphs[0]
                             caption_para.text = img_file.replace('.png', '').replace('_', ' ').title()

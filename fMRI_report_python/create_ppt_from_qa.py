@@ -34,7 +34,7 @@ def get_tr_from_json(nifti_path):
     return None
 
 def extract_metrics_from_qa_dirs(qa_output_dirs, func_dir=None):
-    """Extract metrics from existing QA output directories"""
+    """Extract metrics from existing QA output directories and original data"""
     metrics_list = []
     
     for qa_dir in qa_output_dirs:
@@ -50,16 +50,72 @@ def extract_metrics_from_qa_dirs(qa_output_dirs, func_dir=None):
             
         # Try to get TR from func directory
         tr_value = None
+        ernst_factor = None
+        data_shape = None
+        
         if func_dir:
             for ext in ['.nii.gz', '.nii']:
                 nifti_file = os.path.join(func_dir, filename + ext)
                 if os.path.exists(nifti_file):
                     tr_value = get_tr_from_json(nifti_file)
+                    if tr_value:
+                        # Calculate Ernst scaling factor
+                        if tr_value <= 0.7:
+                            ernst_factor = 0.5745  # sin(35°)
+                        elif tr_value <= 1.0:
+                            ernst_factor = 0.7071  # sin(45°)
+                        elif tr_value <= 1.5:
+                            ernst_factor = 0.8155  # sin(54.7°)
+                        else:
+                            ernst_factor = 1.0     # sin(90°)
+                    
+                    # Try to get data shape from NIFTI file
+                    try:
+                        import nibabel as nib
+                        img = nib.load(nifti_file)
+                        data_shape = img.shape
+                    except Exception as e:
+                        print(f"Could not load NIFTI file {nifti_file}: {e}")
                     break
+        
+        # Try to extract metrics from NIFTI files in QA directory
+        isnr_value = None
+        tsnr_value = None
+        mean_tsnr_unit_time = None
+        
+        # Look for iSNR and tSNR NIFTI files
+        isnr_file = os.path.join(qa_dir, 'isnr.nii.gz')
+        tsnr_file = os.path.join(qa_dir, 'tsnr.nii.gz')
+        
+        try:
+            import nibabel as nib
+            import numpy as np
+            
+            if os.path.exists(isnr_file):
+                isnr_img = nib.load(isnr_file)
+                isnr_data = isnr_img.get_fdata()
+                isnr_value = float(np.mean(isnr_data[isnr_data > 0]))  # Mean of non-zero voxels
+            
+            if os.path.exists(tsnr_file):
+                tsnr_img = nib.load(tsnr_file)
+                tsnr_data = tsnr_img.get_fdata()
+                tsnr_value = float(np.mean(tsnr_data[tsnr_data > 0]))  # Mean of non-zero voxels
+                
+                # Calculate tSNR per unit time if TR is available
+                if tr_value and tsnr_value:
+                    mean_tsnr_unit_time = tsnr_value / np.sqrt(tr_value)
+        
+        except Exception as e:
+            print(f"Could not extract metrics from NIFTI files in {qa_dir}: {e}")
         
         metrics = {
             'filename': filename,
             'tr': tr_value if tr_value else 'Unknown',
+            'ernst_factor': ernst_factor,
+            'data_shape': data_shape,
+            'isnr': isnr_value,
+            'tsnr': tsnr_value,
+            'tsnr_per_unit_time': mean_tsnr_unit_time,
             'qa_dir': qa_dir
         }
         
@@ -104,19 +160,32 @@ def create_qa_powerpoint(qa_output_dirs, presentation_path, summary_data):
     
     for i, data in enumerate(summary_data):
         p = tf.add_paragraph()
-        p.text = f"\n{i+1}. {data['filename']}"
+        p.text = f"\n{i+1}. {data['filename'][:50]}{'...' if len(data['filename']) > 50 else ''}"
         p.font.size = Pt(12)
         p.font.bold = True
         
+        # Build summary metrics line
+        metrics_line = f"   • TR: {data['tr']}s"
+        if data['isnr']:
+            metrics_line += f" | iSNR: {data['isnr']:.2f}"
+        if data['tsnr']:
+            metrics_line += f" | tSNR: {data['tsnr']:.2f}"
+        if data['ernst_factor']:
+            metrics_line += f" | Ernst: {data['ernst_factor']:.3f}"
+        
         p = tf.add_paragraph()
-        p.text = f"   • TR: {data['tr']}s"
+        p.text = metrics_line
         p.font.size = Pt(10)
         
         qa_dir = data['qa_dir']
         if os.path.exists(qa_dir):
             image_files = [f for f in os.listdir(qa_dir) if f.endswith('.png')]
+            shape_text = ""
+            if data['data_shape'] and len(data['data_shape']) >= 3:
+                shape_text = f" | Shape: {data['data_shape'][0]}×{data['data_shape'][1]}×{data['data_shape'][2]}"
+            
             p = tf.add_paragraph()
-            p.text = f"   • {len(image_files)} QA images available"
+            p.text = f"   • {len(image_files)} QA images{shape_text}"
             p.font.size = Pt(10)
     
     # Create slides for each dataset
@@ -140,12 +209,50 @@ def create_qa_powerpoint(qa_output_dirs, presentation_path, summary_data):
         p.font.size = Pt(14)
         p.font.bold = True
         
-        # List available images
+        # Create comprehensive metrics text
         image_files = [f for f in os.listdir(qa_dir) if f.endswith('.png')]
-        info_text = f"\nDataset Information:\n• TR: {data['tr']}s\n• QA Directory: {os.path.basename(qa_dir)}\n\nAvailable Images ({len(image_files)}):\n"
         
+        info_text = f"\nQA Metrics Summary:\n"
+        
+        # Add TR and Ernst scaling info
+        if data['tr'] != 'Unknown':
+            info_text += f"• TR (Repetition Time): {data['tr']}s\n"
+            if data['ernst_factor']:
+                info_text += f"• Ernst scaling factor: {data['ernst_factor']:.4f}\n"
+        
+        # Add data shape
+        if data['data_shape']:
+            if len(data['data_shape']) == 4:
+                info_text += f"• Image data shape: {data['data_shape'][0]} × {data['data_shape'][1]} × {data['data_shape'][2]} × {data['data_shape'][3]} voxels\n"
+            else:
+                info_text += f"• Image data shape: {data['data_shape']}\n"
+        
+        # Add SNR metrics
+        if data['isnr']:
+            info_text += f"• Image SNR (iSNR): {data['isnr']:.2f}\n"
+        
+        if data['tsnr']:
+            info_text += f"• Temporal SNR (tSNR): {data['tsnr']:.2f}\n"
+        
+        if data['tsnr_per_unit_time']:
+            info_text += f"• tSNR per unit time: {data['tsnr_per_unit_time']:.2f}\n"
+        
+        info_text += f"\nTechnical Details:\n"
+        info_text += f"• QA output directory: {os.path.basename(qa_dir)}\n"
+        info_text += f"• Generated QA images: {len(image_files)} files\n"
+        
+        # List key image types
+        key_images = []
         for img_file in sorted(image_files):
-            info_text += f"• {img_file}\n"
+            if any(key in img_file.lower() for key in ['isnr', 'tsnr', 'mean', 'montage']):
+                key_images.append(img_file)
+        
+        if key_images:
+            info_text += f"\nKey QA Images:\n"
+            for img_file in key_images[:6]:  # Limit to avoid text overflow
+                info_text += f"• {img_file}\n"
+            if len(key_images) > 6:
+                info_text += f"• ... and {len(key_images) - 6} more images\n"
         
         p = tf.add_paragraph()
         p.text = info_text
@@ -206,8 +313,8 @@ def create_qa_powerpoint(qa_output_dirs, presentation_path, summary_data):
                             pic.height = max_height
                             pic.width = int(pic.width * ratio)
                         
-                        # Add caption
-                        caption_shape = slide.shapes.add_textbox(left, y_pos + Inches(3), Inches(4), Inches(0.5))
+                        # Add caption below the actual image
+                        caption_shape = slide.shapes.add_textbox(left, y_pos + pic.height, pic.width, Inches(0.5))
                         caption_frame = caption_shape.text_frame
                         caption_para = caption_frame.paragraphs[0]
                         caption_para.text = img_file.replace('.png', '').replace('_', ' ').title()

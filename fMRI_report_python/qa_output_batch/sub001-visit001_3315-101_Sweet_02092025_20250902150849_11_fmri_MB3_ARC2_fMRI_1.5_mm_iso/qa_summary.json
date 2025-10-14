@@ -1,0 +1,19 @@
+{
+  "file": "sub001-visit001_3315-101_Sweet_02092025_20250902150849_11_fmri_MB3_ARC2_fMRI_1.5_mm_iso.nii.gz",
+  "shape": [
+    256,
+    256,
+    76,
+    200
+  ],
+  "tr": 2.2,
+  "ernst_scaling": 1.0,
+  "mean_tsnr": 11.92038558844099,
+  "mean_isnr": 2189.4882422367464,
+  "voxel_size": [
+    0.8202999830245972,
+    0.8202999830245972,
+    1.5
+  ],
+  "processing_method": "memory_optimized"
+}
