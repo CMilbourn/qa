@@ -79,6 +79,27 @@ def add_tsnr_montage_slide(prs, title, image_path, tr_value="Unknown", ernst_sca
         missing_paragraph = missing_frame.paragraphs[0]
         missing_paragraph.font.size = Pt(14)
         missing_paragraph.alignment = PP_ALIGN.CENTER
+    
+    # Add tSNR metrics at bottom if available
+    if tsnr_metrics:
+        metrics_shape = slide.shapes.add_textbox(Inches(0.5), Inches(6.8), Inches(9), Inches(1))
+        metrics_frame = metrics_shape.text_frame
+        
+        metrics_text = "tSNR Metrics: "
+        if 'mean_tsnr' in tsnr_metrics:
+            metrics_text += f"Mean: {tsnr_metrics['mean_tsnr']:.2f}  "
+        if 'median_tsnr' in tsnr_metrics:
+            metrics_text += f"Median: {tsnr_metrics['median_tsnr']:.2f}  "
+        if 'std_tsnr' in tsnr_metrics:
+            metrics_text += f"Std: {tsnr_metrics['std_tsnr']:.2f}  "
+        if 'max_tsnr' in tsnr_metrics:
+            metrics_text += f"Max: {tsnr_metrics['max_tsnr']:.2f}"
+        
+        metrics_frame.text = metrics_text
+        metrics_paragraph = metrics_frame.paragraphs[0]
+        metrics_paragraph.font.size = Pt(14)
+        metrics_paragraph.font.bold = True
+        metrics_paragraph.alignment = PP_ALIGN.CENTER
 
 def extract_tr_from_json(qa_dir):
     """Extract TR from JSON metadata file for sub003."""
@@ -121,6 +142,77 @@ def calculate_ernst_scaling(tr_value):
     except:
         pass
     return 1.0
+
+def extract_tsnr_metrics(qa_dir):
+    """Extract tSNR metrics from QA directory output files."""
+    tsnr_metrics = {}
+    
+    # Look for text files with tSNR metrics
+    potential_files = [
+        'qa_metrics.txt',
+        'tsnr_metrics.txt',
+        'summary.txt',
+        'results.txt'
+    ]
+    
+    for filename in potential_files:
+        file_path = os.path.join(qa_dir, filename)
+        if os.path.exists(file_path):
+            try:
+                with open(file_path, 'r') as f:
+                    content = f.read().lower()
+                    
+                    # Extract tSNR values using simple parsing
+                    import re
+                    
+                    # Look for patterns like "mean tsnr: 45.67" or "tsnr mean: 45.67"
+                    mean_match = re.search(r'(?:mean\s+tsnr|tsnr\s+mean):\s*([0-9]+\.?[0-9]*)', content)
+                    if mean_match:
+                        tsnr_metrics['mean_tsnr'] = float(mean_match.group(1))
+                    
+                    # Look for median tSNR
+                    median_match = re.search(r'(?:median\s+tsnr|tsnr\s+median):\s*([0-9]+\.?[0-9]*)', content)
+                    if median_match:
+                        tsnr_metrics['median_tsnr'] = float(median_match.group(1))
+                    
+                    # Look for std tSNR
+                    std_match = re.search(r'(?:std\s+tsnr|tsnr\s+std|standard\s+deviation\s+tsnr):\s*([0-9]+\.?[0-9]*)', content)
+                    if std_match:
+                        tsnr_metrics['std_tsnr'] = float(std_match.group(1))
+                    
+                    # Look for max tSNR
+                    max_match = re.search(r'(?:max\s+tsnr|tsnr\s+max|maximum\s+tsnr):\s*([0-9]+\.?[0-9]*)', content)
+                    if max_match:
+                        tsnr_metrics['max_tsnr'] = float(max_match.group(1))
+                        
+            except Exception as e:
+                print(f"  ⚠️ Could not read {filename}: {e}")
+                continue
+    
+    # If no text files found, try to extract from NIfTI files using nibabel
+    if not tsnr_metrics:
+        nifti_file = os.path.join(qa_dir, 'tsnr_tsnr_map.nii.gz')
+        if os.path.exists(nifti_file):
+            try:
+                import nibabel as nib
+                import numpy as np
+                
+                print(f"  📊 Computing tSNR metrics from NIfTI file...")
+                tsnr_img = nib.load(nifti_file)
+                tsnr_data = tsnr_img.get_fdata()
+                
+                # Remove zeros and invalid values
+                valid_tsnr = tsnr_data[tsnr_data > 0]
+                if len(valid_tsnr) > 0:
+                    tsnr_metrics['mean_tsnr'] = float(np.mean(valid_tsnr))
+                    tsnr_metrics['median_tsnr'] = float(np.median(valid_tsnr))
+                    tsnr_metrics['std_tsnr'] = float(np.std(valid_tsnr))
+                    tsnr_metrics['max_tsnr'] = float(np.max(valid_tsnr))
+                    
+            except Exception as e:
+                print(f"  ⚠️ Could not compute tSNR metrics from NIfTI: {e}")
+    
+    return tsnr_metrics if tsnr_metrics else None
 
 def create_sub003_tsnr_slides(qa_parent_dir, output_file):
     """Create PowerPoint with tSNR montage slides for sub003."""
@@ -172,6 +264,12 @@ def create_sub003_tsnr_slides(qa_parent_dir, output_file):
         tr = extract_tr_from_json(qa_dir)
         ernst_scaling = calculate_ernst_scaling(tr)
         
+        # Extract tSNR metrics
+        print(f"  📊 Extracting tSNR metrics...")
+        tsnr_metrics = extract_tsnr_metrics(qa_dir)
+        if tsnr_metrics:
+            print(f"     Mean tSNR: {tsnr_metrics.get('mean_tsnr', 'N/A'):.2f}" if 'mean_tsnr' in tsnr_metrics else "     Mean tSNR: N/A")
+        
         # Look for tSNR montage image (orange colormap with all 55 slices)
         tsnr_montage_files = [
             'tSNR_montage.png',       # Large 2MB file with comprehensive montage and orange colormap
@@ -185,8 +283,8 @@ def create_sub003_tsnr_slides(qa_parent_dir, output_file):
             tsnr_path = os.path.join(qa_dir, tsnr_file)
             if os.path.exists(tsnr_path):
                 title = f"{scan_type}: Temporal SNR Montage"
-                add_tsnr_montage_slide(prs, title, tsnr_path, tr, ernst_scaling)
-                print(f"  ✅ Added: {tsnr_file}")
+                add_tsnr_montage_slide(prs, title, tsnr_path, tr, ernst_scaling, tsnr_metrics)
+                print(f"  ✅ Added: {tsnr_file} with metrics")
                 tsnr_found = True
                 break
         
@@ -194,7 +292,7 @@ def create_sub003_tsnr_slides(qa_parent_dir, output_file):
             print(f"  ⚠️  No tSNR montage image found in {qa_name}")
             # Still create a slide but with missing image placeholder
             title = f"{scan_type}: Temporal SNR Montage"
-            add_tsnr_montage_slide(prs, title, "missing_tsnr_montage.png", tr, ernst_scaling)
+            add_tsnr_montage_slide(prs, title, "missing_tsnr_montage.png", tr, ernst_scaling, tsnr_metrics)
     
     # Save presentation
     try:
