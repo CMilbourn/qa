@@ -1,13 +1,16 @@
 #!/usr/bin/env python3
 """
 tSNR Montage Slide Creator for sub003 QA Results
-Version: 1.0.0
+Version: 1.3.0
 
 Creates PowerPoint slides focused specifically on tSNR montage visualizations
-with the orange colormap format shown in the reference slide.
+with the orange colormap format showing all 55 slices as in the reference slide.
 
 Version History:
 - v1.0.0 (2025-10-16): Initial version creating tSNR montage slides for sub003
+- v1.1.0 (2025-10-16): Fixed to use correct tSNR images with all 55 slices and proper orange colormap
+- v1.2.0 (2025-10-16): Updated to use tSNR_montage.png (2MB file) with proper orange colormap
+- v1.3.0 (2025-10-16): Added tSNR metric extraction and display on slides
 
 Usage: python create_sub003_tsnr_montage_slides.py <qa_parent_dir> <output_file>
 """
@@ -28,7 +31,7 @@ def add_title_slide(prs, title, subtitle=""):
     if subtitle:
         slide.placeholders[1].text = subtitle
 
-def add_tsnr_montage_slide(prs, title, image_path, tr_value="Unknown", ernst_scaling=1.0):
+def add_tsnr_montage_slide(prs, title, image_path, tr_value="Unknown", ernst_scaling=1.0, tsnr_metrics=None):
     """Add a slide with tSNR montage image matching the reference format."""
     slide_layout = prs.slide_layouts[6]  # Blank layout
     slide = prs.slides.add_slide(slide_layout)
@@ -169,12 +172,12 @@ def create_sub003_tsnr_slides(qa_parent_dir, output_file):
         tr = extract_tr_from_json(qa_dir)
         ernst_scaling = calculate_ernst_scaling(tr)
         
-        # Look for tSNR montage image (orange colormap)
+        # Look for tSNR montage image (orange colormap with all 55 slices)
         tsnr_montage_files = [
-            'tsnr_montage.png',
-            'tSNR_montage.png', 
-            'temporal_snr_montage.png',
-            'tsnr_image.png'
+            'tSNR_montage.png',       # Large 2MB file with comprehensive montage and orange colormap
+            'tsnr_montage.png',       # Alternative case
+            'tSNR_w_ROI_images.png',  # Fallback option
+            'tSNR_raw.png'            # Last resort
         ]
         
         tsnr_found = False
