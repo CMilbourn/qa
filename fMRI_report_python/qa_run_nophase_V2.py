@@ -699,6 +699,89 @@ def process_data_nophase(imgm_cla, imgm_affine, core_filename, output_dir, mask_
     plt.close()  # Close the plot to free up memory
     print("Mean SSN:", np.mean(static_spatial_noise))
 
+    ############################## QA SUMMARY TABLE ##############################
+    
+    # Create comprehensive summary table with all important metrics
+    print("\n" + "="*80)
+    print("QA ANALYSIS SUMMARY")
+    print("="*80)
+    
+    # Collect all the metrics that were calculated during analysis
+    summary_metrics = {
+        'File Information': {
+            'Core filename': core_filename,
+            'Output directory': output_dir,
+            'Slice index': slice_index,
+            'Image dimensions': f"{imgm_cla.shape[0]} × {imgm_cla.shape[1]} × {imgm_cla.shape[2]}",
+            'Time points': imgm_cla.shape[3],
+            'Time points (processed)': slice_data.shape[2]  # After removing noise volume
+        },
+        'Acquisition Parameters': {
+            'TR (repetition time)': f"{TR:.2f}s",
+            'TR source': 'JSON metadata' if nifti_path and get_tr_from_json(nifti_path) else 'Default value',
+            'Ernst scaling factor': f"{ErnstScaling:.4f}"
+        },
+        'Signal Quality Metrics': {
+            'Mean volume std': f"{mean_std:.2f}",
+            'Image iSNR': f"{np.mean(isnr_obj_cla.isnr):.2f}",
+            'Noise value (iSNR)': f"{np.mean(isnr_obj_cla.noise):.2f}",
+            'Mean tSNR': f"{my_mean_tsnr:.2f}",
+            'Mean tSNR per unit time': f"{mean_tsnr_unit_time:.2f}",
+            'Mean tSNR within ROI': f"{mean_tsnr_roi:.2f}",
+            'Mean Static Spatial Noise': f"{np.mean(static_spatial_noise):.2f}"
+        },
+        'ROI Parameters': {
+            'ROI position (x, y)': f"({x_start}, {y_start})",
+            'ROI size (width × height)': f"{roi_width} × {roi_height}",
+            'ROI slice': slice_index
+        }
+    }
+    
+    # Print formatted summary to console
+    for category, metrics in summary_metrics.items():
+        print(f"\n{category}:")
+        print("-" * len(category))
+        for key, value in metrics.items():
+            print(f"  {key:<25}: {value}")
+    
+    print("\n" + "="*80)
+    
+    # Save summary to text file
+    summary_filename = 'QA_Summary.txt'
+    summary_path = f"{output_dir}/{summary_filename}"
+    
+    with open(summary_path, 'w') as f:
+        f.write("QA ANALYSIS SUMMARY REPORT\n")
+        f.write("="*80 + "\n")
+        f.write(f"Generated: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n\n")
+        
+        for category, metrics in summary_metrics.items():
+            f.write(f"{category}:\n")
+            f.write("-" * len(category) + "\n")
+            for key, value in metrics.items():
+                f.write(f"  {key:<25}: {value}\n")
+            f.write("\n")
+        
+        f.write("="*80 + "\n")
+        f.write("End of QA Analysis Summary\n")
+    
+    print(f"Summary saved to: {summary_path}")
+
+    # Create a CSV summary for easy import into other tools
+    csv_filename = 'QA_Summary.csv'
+    csv_path = f"{output_dir}/{csv_filename}"
+    
+    import csv
+    with open(csv_path, 'w', newline='') as csvfile:
+        writer = csv.writer(csvfile)
+        writer.writerow(['Category', 'Metric', 'Value'])
+        
+        for category, metrics in summary_metrics.items():
+            for key, value in metrics.items():
+                writer.writerow([category, key, value])
+    
+    print(f"CSV summary saved to: {csv_path}")
+
     # The End
 
 def run_qa_single_path(mypathname, pathname_m, extension, filename_pattern):
