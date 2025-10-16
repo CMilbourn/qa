@@ -45,6 +45,7 @@ import nibabel as nib
 from glob import glob
 import subprocess
 import json
+from datetime import datetime
 
 #from ukat.data import fetch
 from fMRI_report_python.functions import snr
@@ -692,7 +693,8 @@ def run_qa_single_path(mypathname, pathname_m, extension, filename_pattern):
 
         # Create an output directory for saving plots
         # output_directory = mypathname + 'qa_output_' + core_filename  # Original version
-        output_directory = '/Users/cmilbourn/Documents/Sweet_Data/Development_Data/QA_output/qa_output_' + core_filename
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        output_directory = '/Users/cmilbourn/Documents/Sweet_Data/Development_Data/QA_output/qa_output_' + core_filename + '_' + timestamp
         os.makedirs(output_directory, exist_ok=True)
         OUTPUT_DIR = os.path.abspath(output_directory)
 
@@ -765,7 +767,8 @@ if __name__ == "__main__":
 
         # Create an output directory for saving plots
         # output_directory = mypathname + 'qa_output_' + core_filename  # Original version
-        output_directory = '/Users/cmilbourn/Documents/Sweet_Data/Development_Data/QA_output/qa_output_' + core_filename
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        output_directory = '/Users/cmilbourn/Documents/Sweet_Data/Development_Data/QA_output/qa_output_' + core_filename + '_' + timestamp
         os.makedirs(output_directory, exist_ok=True)
         OUTPUT_DIR = os.path.abspath(output_directory)
 
