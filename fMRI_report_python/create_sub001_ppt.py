@@ -1,8 +1,12 @@
 #!/usr/bin/env python3
 """
 Simple PowerPoint Creator for sub001 QA Results
+Version: 1.0.0
 
 Creates a comprehensive PowerPoint presentation from all QA output directories.
+
+Version History:
+- v1.0.0 (2025-10-16): Baseline version with qa_summary.json support
 """
 
 import os

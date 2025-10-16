@@ -1,9 +1,13 @@
 #!/usr/bin/env python3
 """
 Simple PowerPoint Creator for sub003 QA Results
+Version: 1.0.0
 
 Creates a comprehensive PowerPoint presentation from all QA output directories.
 Adapted for sub003 data structure which uses original QA script outputs.
+
+Version History:
+- v1.0.0 (2025-10-16): Baseline version adapted from sub001 for sub003 data structure
 """
 
 import os

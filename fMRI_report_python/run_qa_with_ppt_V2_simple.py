@@ -1,8 +1,13 @@
 #!/usr/bin/env python
 """
-QA Analysis with PowerPoint Report Generation (V2)
+QA Analysis with PowerPoint Report Generation (V2 Simple)
+Version: 2.0.0
+
 Simple approach that runs existing QA analysis then creates PowerPoint
 Usage: python run_qa_with_ppt_V2_simple.py --func_dir /path/to/func/ [options]
+
+Version History:
+- v2.0.0 (2025-10-16): Baseline version for simple integrated QA + PowerPoint workflow
 """
 
 import argparse

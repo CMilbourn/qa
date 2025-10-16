@@ -1,9 +1,13 @@
 #!/usr/bin/env python3
 """
 Memory-Optimized fMRI QA Script for High-Resolution Datasets
+Version: 1.0.0
 
 This version implements memory-efficient processing for large fMRI datasets
 by using chunked processing and avoiding keeping multiple large arrays in memory.
+
+Version History:
+- v1.0.0 (2025-10-16): Baseline version with chunked processing for memory efficiency
 
 Author: Generated for handling high-resolution fMRI QA
 """

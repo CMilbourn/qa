@@ -1,7 +1,11 @@
 #!/usr/bin/env python
 """
 Create PowerPoint from existing QA output directories
+Version: 1.0.0
 Usage: python create_ppt_from_qa.py --qa_parent_dir /path/to/parent/ --output_name "report.pptx"
+
+Version History:
+- v1.0.0 (2025-10-16): Baseline version with comprehensive QA reporting
 """
 
 import argparse

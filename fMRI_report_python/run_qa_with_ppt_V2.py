@@ -1,8 +1,13 @@
 #!/usr/bin/env python
 """
 QA Analysis with PowerPoint Report Generation (V2)
+Version: 2.0.0
+
 Automatically creates a PowerPoint presentation with all QA images and metrics
 Usage: python run_qa_with_ppt_V2.py --func_dir /path/to/func/ [options]
+
+Version History:
+- v2.0.0 (2025-10-16): Baseline version for integrated QA processing + PowerPoint generation
 """
 
 import argparse
