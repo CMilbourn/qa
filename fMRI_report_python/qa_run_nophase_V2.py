@@ -47,6 +47,18 @@ import subprocess
 import json
 from datetime import datetime
 
+# PowerPoint generation
+try:
+    from pptx import Presentation
+    from pptx.util import Inches, Pt
+    from pptx.enum.text import PP_ALIGN
+    from pptx.dml.color import RGBColor
+    PPTX_AVAILABLE = True
+except ImportError:
+    print("Warning: python-pptx not available. PowerPoint generation will be skipped.")
+    print("To enable PowerPoint generation, install python-pptx: pip install python-pptx")
+    PPTX_AVAILABLE = False
+
 #from ukat.data import fetch
 from fMRI_report_python.functions import snr
 #from fMRI_report_python.functions.snr import some_function
@@ -781,6 +793,214 @@ def process_data_nophase(imgm_cla, imgm_affine, core_filename, output_dir, mask_
                 writer.writerow([category, key, value])
     
     print(f"CSV summary saved to: {csv_path}")
+
+    ############################## POWERPOINT GENERATION ##############################
+    
+    if PPTX_AVAILABLE:
+        try:
+            # Create PowerPoint presentation
+            prs = Presentation()
+            
+            # Slide 1: Title Slide
+            slide_layout = prs.slide_layouts[0]  # Title slide layout
+            slide = prs.slides.add_slide(slide_layout)
+            title = slide.shapes.title
+            subtitle = slide.placeholders[1]
+            
+            title.text = "fMRI Quality Assurance Report"
+            subtitle.text = f"Subject: {extract_subject_number(core_filename)}\nFile: {core_filename}\nGenerated: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}"
+            
+            # Slide 2: Summary Metrics
+            slide_layout = prs.slide_layouts[1]  # Title and content layout
+            slide = prs.slides.add_slide(slide_layout)
+            title = slide.shapes.title
+            title.text = "QA Summary Metrics"
+            
+            # Add text box with summary metrics
+            left = Inches(1)
+            top = Inches(1.5)
+            width = Inches(8)
+            height = Inches(5)
+            textbox = slide.shapes.add_textbox(left, top, width, height)
+            text_frame = textbox.text_frame
+            
+            # Add key metrics to slide
+            key_metrics = [
+                f"Image Dimensions: {imgm_cla.shape[0]} × {imgm_cla.shape[1]} × {imgm_cla.shape[2]}",
+                f"Time Points: {imgm_cla.shape[3]} (processed: {slice_data.shape[2]})",
+                f"TR: {TR:.2f}s (from {summary_metrics['Acquisition Parameters']['TR source']})",
+                f"Mean tSNR: {my_mean_tsnr:.2f}",
+                f"Mean tSNR per unit time: {mean_tsnr_unit_time:.2f}",
+                f"Image iSNR: {np.mean(isnr_obj_cla.isnr):.2f}",
+                f"Mean tSNR within ROI: {mean_tsnr_roi:.2f}",
+                f"Static Spatial Noise: {np.mean(static_spatial_noise):.2f}"
+            ]
+            
+            for i, metric in enumerate(key_metrics):
+                p = text_frame.paragraphs[0] if i == 0 else text_frame.add_paragraph()
+                p.text = metric
+                p.font.size = Pt(14)
+            
+            # Slide 3: Mean Image
+            slide_layout = prs.slide_layouts[6]  # Blank layout
+            slide = prs.slides.add_slide(slide_layout)
+            
+            # Add title
+            left = Inches(1)
+            top = Inches(0.5)
+            width = Inches(8)
+            height = Inches(1)
+            title_box = slide.shapes.add_textbox(left, top, width, height)
+            title_frame = title_box.text_frame
+            title_p = title_frame.paragraphs[0]
+            title_p.text = f"Mean Image (Slice {slice_index})"
+            title_p.font.size = Pt(24)
+            title_p.font.bold = True
+            
+            # Add mean image
+            mean_img_path = f"{output_dir}/Mean_image.png"
+            if os.path.exists(mean_img_path):
+                left = Inches(1.5)
+                top = Inches(1.5)
+                slide.shapes.add_picture(mean_img_path, left, top, width=Inches(6))
+            
+            # Slide 4: Mean Montage
+            slide_layout = prs.slide_layouts[6]  # Blank layout
+            slide = prs.slides.add_slide(slide_layout)
+            
+            # Add title
+            title_box = slide.shapes.add_textbox(Inches(1), Inches(0.5), Inches(8), Inches(1))
+            title_frame = title_box.text_frame
+            title_p = title_frame.paragraphs[0]
+            title_p.text = "Mean Image Montage (All Slices)"
+            title_p.font.size = Pt(20)
+            title_p.font.bold = True
+            
+            # Add montage
+            montage_path = f"{output_dir}/mean_montage.png"
+            if os.path.exists(montage_path):
+                slide.shapes.add_picture(montage_path, Inches(0.5), Inches(1.5), width=Inches(8.5))
+            
+            # Slide 5: iSNR Maps
+            slide_layout = prs.slide_layouts[6]
+            slide = prs.slides.add_slide(slide_layout)
+            
+            title_box = slide.shapes.add_textbox(Inches(1), Inches(0.3), Inches(8), Inches(0.8))
+            title_frame = title_box.text_frame
+            title_p = title_frame.paragraphs[0]
+            title_p.text = f"iSNR Maps - Mean iSNR: {np.mean(isnr_obj_cla.isnr):.2f}"
+            title_p.font.size = Pt(18)
+            title_p.font.bold = True
+            
+            # Add iSNR sagittal and coronal images side by side
+            isnr_sag_path = f"{output_dir}/iSNR_sag.png"
+            isnr_cor_path = f"{output_dir}/iSNR_cor.png"
+            
+            if os.path.exists(isnr_sag_path):
+                slide.shapes.add_picture(isnr_sag_path, Inches(0.5), Inches(1.2), width=Inches(4))
+            if os.path.exists(isnr_cor_path):
+                slide.shapes.add_picture(isnr_cor_path, Inches(5), Inches(1.2), width=Inches(4))
+            
+            # Slide 6: tSNR Maps
+            slide_layout = prs.slide_layouts[6]
+            slide = prs.slides.add_slide(slide_layout)
+            
+            title_box = slide.shapes.add_textbox(Inches(1), Inches(0.3), Inches(8), Inches(0.8))
+            title_frame = title_box.text_frame
+            title_p = title_frame.paragraphs[0]
+            title_p.text = f"tSNR Maps - Mean tSNR: {my_mean_tsnr:.2f}"
+            title_p.font.size = Pt(18)
+            title_p.font.bold = True
+            
+            # Add tSNR sagittal and coronal images
+            tsnr_sag_path = f"{output_dir}/tSNR_sag.png"
+            tsnr_cor_path = f"{output_dir}/tSNR_cor.png"
+            
+            if os.path.exists(tsnr_sag_path):
+                slide.shapes.add_picture(tsnr_sag_path, Inches(0.5), Inches(1.2), width=Inches(4))
+            if os.path.exists(tsnr_cor_path):
+                slide.shapes.add_picture(tsnr_cor_path, Inches(5), Inches(1.2), width=Inches(4))
+            
+            # Slide 7: tSNR Montage
+            slide_layout = prs.slide_layouts[6]
+            slide = prs.slides.add_slide(slide_layout)
+            
+            title_box = slide.shapes.add_textbox(Inches(1), Inches(0.3), Inches(8), Inches(0.8))
+            title_frame = title_box.text_frame
+            title_p = title_frame.paragraphs[0]
+            title_p.text = "tSNR Montage (All Slices)"
+            title_p.font.size = Pt(20)
+            title_p.font.bold = True
+            
+            tsnr_montage_path = f"{output_dir}/tSNR_montage.png"
+            if os.path.exists(tsnr_montage_path):
+                slide.shapes.add_picture(tsnr_montage_path, Inches(0.5), Inches(1.2), width=Inches(8.5))
+            
+            # Slide 8: ROI Analysis
+            slide_layout = prs.slide_layouts[6]
+            slide = prs.slides.add_slide(slide_layout)
+            
+            title_box = slide.shapes.add_textbox(Inches(1), Inches(0.3), Inches(8), Inches(0.8))
+            title_frame = title_box.text_frame
+            title_p = title_frame.paragraphs[0]
+            title_p.text = f"ROI Analysis - tSNR in ROI: {mean_tsnr_roi:.2f}"
+            title_p.font.size = Pt(18)
+            title_p.font.bold = True
+            
+            # Add ROI images and time series
+            roi_path = f"{output_dir}/tSNR_w_ROI_images.png"
+            ts_path = f"{output_dir}/TS_images.png"
+            
+            if os.path.exists(roi_path):
+                slide.shapes.add_picture(roi_path, Inches(0.5), Inches(1.2), width=Inches(8.5))
+            
+            if os.path.exists(ts_path):
+                # Add time series on next slide
+                slide_layout = prs.slide_layouts[6]
+                slide = prs.slides.add_slide(slide_layout)
+                
+                title_box = slide.shapes.add_textbox(Inches(1), Inches(0.3), Inches(8), Inches(0.8))
+                title_frame = title_box.text_frame
+                title_p = title_frame.paragraphs[0]
+                title_p.text = f"Time Series Analysis (Slice {slice_index})"
+                title_p.font.size = Pt(18)
+                title_p.font.bold = True
+                
+                slide.shapes.add_picture(ts_path, Inches(0.5), Inches(1.2), width=Inches(8.5))
+            
+            # Slide 9: Noise Analysis
+            slide_layout = prs.slide_layouts[6]
+            slide = prs.slides.add_slide(slide_layout)
+            
+            title_box = slide.shapes.add_textbox(Inches(1), Inches(0.3), Inches(8), Inches(0.8))
+            title_frame = title_box.text_frame
+            title_p = title_frame.paragraphs[0]
+            title_p.text = f"Noise Analysis - SSN: {np.mean(static_spatial_noise):.2f}"
+            title_p.font.size = Pt(18)
+            title_p.font.bold = True
+            
+            # Add noise images
+            noise_path = f"{output_dir}/masked_noise.png"
+            ssn_path = f"{output_dir}/SSN.png"
+            
+            if os.path.exists(noise_path):
+                slide.shapes.add_picture(noise_path, Inches(0.5), Inches(1.2), width=Inches(8.5))
+            
+            if os.path.exists(ssn_path):
+                slide.shapes.add_picture(ssn_path, Inches(0.5), Inches(5), width=Inches(4))
+            
+            # Save PowerPoint
+            pptx_filename = 'QA_Report.pptx'
+            pptx_path = f"{output_dir}/{pptx_filename}"
+            prs.save(pptx_path)
+            
+            print(f"PowerPoint report saved to: {pptx_path}")
+            
+        except Exception as e:
+            print(f"Error creating PowerPoint: {e}")
+            print("PowerPoint generation failed, but analysis completed successfully.")
+    else:
+        print("PowerPoint generation skipped (python-pptx not available)")
 
     # The End
 
