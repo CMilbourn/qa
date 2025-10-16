@@ -112,6 +112,35 @@ def get_tr_from_json(nifti_path):
         print(f"No JSON sidecar found at: {json_path}")
         return None
 
+# Function to extract subject number from filename
+def extract_subject_number(filename):
+    """
+    Extract subject number from BIDS-style filename
+    
+    Parameters:
+    -----------
+    filename : str
+        Core filename (e.g., 'sub001-visit001-ses001-task-rest-bold')
+        
+    Returns:
+    --------
+    str
+        Subject number (e.g., 'sub001') or 'unknown' if not found
+    """
+    import re
+    
+    # Look for pattern sub### where ### can be any number of digits
+    match = re.search(r'sub(\d+)', filename)
+    if match:
+        return f"sub{match.group(1)}"
+    else:
+        # Fallback: try to find 'sub' followed by any alphanumeric characters
+        match = re.search(r'(sub[a-zA-Z0-9]+)', filename)
+        if match:
+            return match.group(1)
+    
+    return 'unknown'
+
 def process_data_nophase(imgm_cla, imgm_affine, core_filename, output_dir, mask_data=None, TR=None, nifti_path=None):
     # This is our big function
     # I had to condense all the functionality of the notebook into this one func, to make the for loop in the script easier
@@ -693,8 +722,9 @@ def run_qa_single_path(mypathname, pathname_m, extension, filename_pattern):
 
         # Create an output directory for saving plots
         # output_directory = mypathname + 'qa_output_' + core_filename  # Original version
+        subject_number = extract_subject_number(core_filename)
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-        output_directory = '/Users/cmilbourn/Documents/Sweet_Data/Development_Data/QA_output/qa_output_' + core_filename + '_' + timestamp
+        output_directory = '/Users/cmilbourn/Documents/Sweet_Data/Development_Data/QA_output/' + subject_number + '_qa_output_' + core_filename + '_' + timestamp
         os.makedirs(output_directory, exist_ok=True)
         OUTPUT_DIR = os.path.abspath(output_directory)
 
@@ -728,7 +758,7 @@ def run_qa_single_path(mypathname, pathname_m, extension, filename_pattern):
 
         # Process and plot data
         #process_data_nophase(imgm_cla, imgm_cla_affine, core_filename, OUTPUT_DIR)
-        process_data_nophase(imgm_cla, imgm_cla_affine, core_filename, OUTPUT_DIR, mask_data)
+        process_data_nophase(imgm_cla, imgm_cla_affine, core_filename, OUTPUT_DIR, mask_data, nifti_path=mag_file_path)
 
 if __name__ == "__main__":
     # Location of data
@@ -767,8 +797,9 @@ if __name__ == "__main__":
 
         # Create an output directory for saving plots
         # output_directory = mypathname + 'qa_output_' + core_filename  # Original version
+        subject_number = extract_subject_number(core_filename)
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-        output_directory = '/Users/cmilbourn/Documents/Sweet_Data/Development_Data/QA_output/qa_output_' + core_filename + '_' + timestamp
+        output_directory = '/Users/cmilbourn/Documents/Sweet_Data/Development_Data/QA_output/' + subject_number + '_qa_output_' + core_filename + '_' + timestamp
         os.makedirs(output_directory, exist_ok=True)
         OUTPUT_DIR = os.path.abspath(output_directory)
 
@@ -802,4 +833,4 @@ if __name__ == "__main__":
 
         # Process and plot data
         #process_data_nophase(imgm_cla, imgm_cla_affine, core_filename, OUTPUT_DIR)
-        process_data_nophase(imgm_cla, imgm_cla_affine, core_filename, OUTPUT_DIR, mask_data)
+        process_data_nophase(imgm_cla, imgm_cla_affine, core_filename, OUTPUT_DIR, mask_data, nifti_path=mag_file_path)
