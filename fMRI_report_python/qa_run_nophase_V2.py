@@ -1,9 +1,9 @@
 #!/usr/bin/env python
 # coding: utf-8
 # qa_run_nophase.py based on qa_run_nophase.ipynb  
-
+# version update 20251016: change output directory
 # # Quality Assurance (QA) Python Version
-# 
+# qa_run_nophase_V2.py
 # This notebook gives example uses of image based QA metrics in `qa`.
 # 
 # A large chunk of this code has been taken from Alex Daniel's `ukat` code: https://github.com/UKRIN-MAPS/ukat.
@@ -691,7 +691,8 @@ def run_qa_single_path(mypathname, pathname_m, extension, filename_pattern):
         print(f"{core_filename}")
 
         # Create an output directory for saving plots
-        output_directory = mypathname + 'qa_output_' + core_filename
+        # output_directory = mypathname + 'qa_output_' + core_filename  # Original version
+        output_directory = '/Users/cmilbourn/Documents/Sweet_Data/Development_Data/QA_output/qa_output_' + core_filename
         os.makedirs(output_directory, exist_ok=True)
         OUTPUT_DIR = os.path.abspath(output_directory)
 
@@ -763,7 +764,8 @@ if __name__ == "__main__":
         print(f"{core_filename}")
 
         # Create an output directory for saving plots
-        output_directory = mypathname + 'qa_output_' + core_filename
+        # output_directory = mypathname + 'qa_output_' + core_filename  # Original version
+        output_directory = '/Users/cmilbourn/Documents/Sweet_Data/Development_Data/QA_output/qa_output_' + core_filename
         os.makedirs(output_directory, exist_ok=True)
         OUTPUT_DIR = os.path.abspath(output_directory)
 
