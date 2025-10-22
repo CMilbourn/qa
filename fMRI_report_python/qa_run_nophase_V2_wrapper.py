@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 # coding: utf-8
-# qa_run_nophase.py based on qa_run_nophase.ipynb  
+# qa_run_nophase_V2.py based on qa_run_nophase.ipynb  
 # version update 20251016: change output directory
 # # Quality Assurance (QA) Python Version
 # qa_run_nophase_V2.py
@@ -46,6 +46,7 @@ from glob import glob
 import subprocess
 import json
 from datetime import datetime
+import argparse
 
 # PowerPoint generation
 try:
@@ -1044,7 +1045,7 @@ def process_data_nophase(imgm_cla, imgm_affine, core_filename, output_dir, mask_
 
     # The End
 
-def run_qa_single_path(mypathname, pathname_m, extension, filename_pattern):
+def run_qa_single_path(mypathname, pathname_m, extension, filename_pattern, output_base_dir=None, output_pattern=None):
     """
     Run QA analysis for a single path configuration
     This function contains the main processing logic that was previously in __main__
@@ -1067,7 +1068,25 @@ def run_qa_single_path(mypathname, pathname_m, extension, filename_pattern):
         # output_directory = mypathname + 'qa_output_' + core_filename  # Original version
         subject_number = extract_subject_number(core_filename)
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-        output_directory = '/Users/cmilbourn/Documents/Sweet_Data/Development_Data/QA_output/' + subject_number + '_qa_output_' + core_filename + '_' + timestamp
+        
+        # Use provided output_base_dir or default location
+        if output_base_dir is None:
+            output_base_dir = '/Users/cmilbourn/Documents/Sweet_Data/Development_Data/QA_output/'
+        
+        # Use output pattern if provided
+        if output_pattern is None:
+            output_pattern = '{subject}_qa_output_{core_filename}_{timestamp}'
+        
+        # Format the output directory name using the pattern
+        output_dir_name = output_pattern.format(
+            subject=subject_number,
+            core_filename=core_filename,
+            timestamp=timestamp,
+            date=datetime.now().strftime("%Y%m%d"),
+            time=datetime.now().strftime("%H%M%S")
+        )
+        
+        output_directory = os.path.join(output_base_dir, output_dir_name)
         os.makedirs(output_directory, exist_ok=True)
         OUTPUT_DIR = os.path.abspath(output_directory)
 
@@ -1102,78 +1121,340 @@ def run_qa_single_path(mypathname, pathname_m, extension, filename_pattern):
         # Process and plot data
         #process_data_nophase(imgm_cla, imgm_cla_affine, core_filename, OUTPUT_DIR)
         process_data_nophase(imgm_cla, imgm_cla_affine, core_filename, OUTPUT_DIR, mask_data, nifti_path=mag_file_path)
+
+# Dataset Configuration Classes
+class DatasetConfig:
+    """Base class for dataset configurations"""
+    def __init__(self, name, description, data_path, func_subdir, extension, filename_pattern, output_base_dir):
+        self.name = name
+        self.description = description
+        self.data_path = data_path
+        self.func_subdir = func_subdir  # subdirectory containing functional data
+        self.extension = extension
+        self.filename_pattern = filename_pattern
+        self.output_base_dir = output_base_dir
+    
+    def get_func_path(self):
+        """Get full path to functional data directory"""
+        return os.path.join(self.data_path, self.func_subdir)
+
+# Predefined dataset configurations
+DATASET_CONFIGS = {
+    'bids_sweet': DatasetConfig(
+        name='BIDS Sweet Phase 3',
+        description='BIDS-formatted Sweet Phase 3 data',
+        data_path='/Users/cmilbourn/Documents/Sweet_Data/Development_Data/Sweet_Data_BIDS_Dev/sub001/sub001-visit001/',
+        func_subdir='func/',
+        extension='.nii.gz',
+        filename_pattern='*task-rest-bold',
+        output_base_dir='/Users/cmilbourn/Documents/Sweet_Data/Development_Data/QA_output/'
+    ),
+    'bids_generic': DatasetConfig(
+        name='BIDS Generic',
+        description='Generic BIDS-formatted dataset',
+        data_path='',  # To be specified by user
+        func_subdir='func/',
+        extension='.nii.gz',
+        filename_pattern='*bold',
+        output_base_dir=''  # To be specified by user
+    ),
+    'legacy_digitmap': DatasetConfig(
+        name='Legacy Digitmap',
+        description='Legacy digitmap format data',
+        data_path='',  # To be specified by user
+        func_subdir='magnitude/',
+        extension='.nii',
+        filename_pattern='digitmap*',
+        output_base_dir=''  # To be specified by user
+    ),
+    'custom': DatasetConfig(
+        name='Custom',
+        description='Custom dataset configuration',
+        data_path='',
+        func_subdir='',
+        extension='',
+        filename_pattern='',
+        output_base_dir=''
+    )
+}
+
+def setup_argparser():
+    """Setup command line argument parser"""
+    parser = argparse.ArgumentParser(
+        description='Flexible fMRI QA Analysis Tool',
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        epilog="""
+Dataset Configuration Examples:
+-----------------------------
+
+1. BIDS Sweet Phase 3 (predefined):
+   python qa_run_nophase_V2_wrapper.py --config bids_sweet
+
+2. Custom BIDS dataset:
+   python qa_run_nophase_V2_wrapper.py --config bids_generic \\
+     --data-path /path/to/bids/subject/session/ \\
+     --output-dir /path/to/output/
+
+3. Legacy digitmap format:
+   python qa_run_nophase_V2_wrapper.py --config legacy_digitmap \\
+     --data-path /path/to/data/ \\
+     --output-dir /path/to/output/
+
+4. Fully custom configuration:
+   python qa_run_nophase_V2_wrapper.py --config custom \\
+     --data-path /path/to/data/ \\
+     --func-subdir func/ \\
+     --extension .nii.gz \\
+     --pattern "*task-rest-bold" \\
+     --output-dir /path/to/output/
+
+5. Override specific parameters:
+   python qa_run_nophase_V2_wrapper.py --config bids_sweet \\
+     --pattern "*task-motor-bold" \\
+     --output-dir /custom/output/path/
+        """)
+    
+    # Configuration options
+    parser.add_argument('--config', '-c', 
+                       choices=list(DATASET_CONFIGS.keys()),
+                       default='bids_sweet',
+                       help='Predefined dataset configuration to use')
+    
+    parser.add_argument('--config-file', '-f',
+                       help='JSON configuration file to load dataset parameters from')
+    
+    parser.add_argument('--list-configs', action='store_true',
+                       help='List available predefined configurations')
+    
+    parser.add_argument('--save-config',
+                       help='Save current configuration to JSON file')
+    
+    # Path arguments
+    parser.add_argument('--data-path', '-d',
+                       help='Base path to dataset (overrides config default)')
+    
+    parser.add_argument('--func-subdir', '-s',
+                       help='Subdirectory containing functional data (overrides config default)')
+    
+    parser.add_argument('--output-dir', '-o',
+                       help='Output directory base path (overrides config default)')
+    
+    parser.add_argument('--output-pattern',
+                       default='{subject}_qa_output_{core_filename}_{timestamp}',
+                       help='Output directory naming pattern (default: {subject}_qa_output_{core_filename}_{timestamp})')
+    
+    # File pattern arguments
+    parser.add_argument('--extension', '-e',
+                       help='File extension (e.g., .nii.gz, .nii) (overrides config default)')
+    
+    parser.add_argument('--pattern', '-p',
+                       help='Filename pattern (e.g., *task-rest-bold) (overrides config default)')
+    
+    # Processing options
+    parser.add_argument('--dry-run', action='store_true',
+                       help='Show what would be processed without running analysis')
+    
+    parser.add_argument('--verbose', '-v', action='store_true',
+                       help='Enable verbose output')
+    
+    parser.add_argument('--create-example-config', 
+                       help='Create an example configuration file with the specified name')
+    
+    return parser
+
+def list_available_configs():
+    """List all available dataset configurations"""
+    print("\nAvailable Dataset Configurations:")
+    print("=" * 50)
+    for key, config in DATASET_CONFIGS.items():
+        print(f"\n{key}:")
+        print(f"  Name: {config.name}")
+        print(f"  Description: {config.description}")
+        print(f"  Functional subdir: {config.func_subdir}")
+        print(f"  File extension: {config.extension}")
+        print(f"  Filename pattern: {config.filename_pattern}")
+
+def load_config_from_file(config_file_path):
+    """Load configuration from JSON file"""
+    try:
+        with open(config_file_path, 'r') as f:
+            config_dict = json.load(f)
+        
+        config = DatasetConfig(
+            name=config_dict.get('name', 'Custom from file'),
+            description=config_dict.get('description', 'Loaded from configuration file'),
+            data_path=config_dict.get('data_path', ''),
+            func_subdir=config_dict.get('func_subdir', ''),
+            extension=config_dict.get('extension', ''),
+            filename_pattern=config_dict.get('filename_pattern', ''),
+            output_base_dir=config_dict.get('output_base_dir', '')
+        )
+        return config
+        
+    except FileNotFoundError:
+        raise ValueError(f"Configuration file not found: {config_file_path}")
+    except json.JSONDecodeError as e:
+        raise ValueError(f"Invalid JSON in configuration file: {e}")
+
+def save_config_to_file(config, config_file_path):
+    """Save configuration to JSON file"""
+    config_dict = {
+        'name': config.name,
+        'description': config.description,
+        'data_path': config.data_path,
+        'func_subdir': config.func_subdir,
+        'extension': config.extension,
+        'filename_pattern': config.filename_pattern,
+        'output_base_dir': config.output_base_dir
+    }
+    
+    try:
+        with open(config_file_path, 'w') as f:
+            json.dump(config_dict, f, indent=2)
+        print(f"Configuration saved to: {config_file_path}")
+    except Exception as e:
+        raise ValueError(f"Failed to save configuration file: {e}")
+
+def create_example_config(config_file_path):
+    """Create an example configuration file with comments"""
+    example_config = {
+        "_comment1": "QA Analysis Configuration File",
+        "_comment2": "Modify the paths and patterns below to match your dataset",
+        "name": "My Custom Dataset",
+        "description": "Custom dataset configuration for QA analysis",
+        "_comment3": "Base path to your dataset (e.g., BIDS subject/session directory)",
+        "data_path": "/path/to/your/dataset/sub001/ses001/",
+        "_comment4": "Subdirectory containing functional data relative to data_path",
+        "func_subdir": "func/",
+        "_comment5": "File extension for your NIfTI files",
+        "extension": ".nii.gz",
+        "_comment6": "Pattern to match functional files (without extension)",
+        "filename_pattern": "*task-rest-bold",
+        "_comment7": "Base directory where QA output will be saved",
+        "output_base_dir": "/path/to/qa/output/"
+    }
+    
+    try:
+        with open(config_file_path, 'w') as f:
+            json.dump(example_config, f, indent=2)
+        print(f"Example configuration created: {config_file_path}")
+        print("Edit this file with your dataset paths and then run:")
+        print(f"python qa_run_nophase_V2_wrapper.py --config-file {config_file_path}")
+    except Exception as e:
+        raise ValueError(f"Failed to create example configuration file: {e}")
+
+def validate_config(config, args):
+    """Validate and complete configuration with user arguments"""
+    # Apply user overrides
+    if args.data_path:
+        config.data_path = args.data_path
+    if args.func_subdir:
+        config.func_subdir = args.func_subdir
+    if args.output_dir:
+        config.output_base_dir = args.output_dir
+    if args.extension:
+        config.extension = args.extension
+    if args.pattern:
+        config.filename_pattern = args.pattern
+    
+    # Validate required paths
+    if not config.data_path:
+        raise ValueError("Data path must be specified (use --data-path or select config with default path)")
+    
+    if not config.output_base_dir:
+        raise ValueError("Output directory must be specified (use --output-dir or select config with default path)")
+    
+    if not os.path.exists(config.data_path):
+        raise ValueError(f"Data path does not exist: {config.data_path}")
+    
+    func_path = config.get_func_path()
+    if not os.path.exists(func_path):
+        raise ValueError(f"Functional data directory does not exist: {func_path}")
+    
+    # Create output directory if it doesn't exist
+    os.makedirs(config.output_base_dir, exist_ok=True)
+    
+    return config
+
+def print_config_summary(config, verbose=False):
+    """Print summary of current configuration"""
+    print(f"\nQA Analysis Configuration: {config.name}")
+    print("=" * 50)
+    print(f"Data path: {config.data_path}")
+    print(f"Functional data: {config.get_func_path()}")
+    print(f"Output directory: {config.output_base_dir}")
+    print(f"File pattern: {config.filename_pattern}{config.extension}")
+    
+    if verbose:
+        print(f"Description: {config.description}")
+        print(f"Functional subdirectory: {config.func_subdir}")
+        print(f"File extension: {config.extension}")
+
+def run_qa_with_config(config, dry_run=False, verbose=False, output_pattern=None):
+    """Run QA analysis with the specified configuration"""
+    
+    print_config_summary(config, verbose)
+    
+    # Find matching files
+    func_path = config.get_func_path()
+    file_pattern = os.path.join(func_path, config.filename_pattern + config.extension)
+    matching_files = glob(file_pattern)
+    
+    if not matching_files:
+        print(f"\nNo files found matching pattern: {file_pattern}")
+        return
+    
+    print(f"\nFound {len(matching_files)} file(s) to process:")
+    for file_path in matching_files:
+        print(f"  - {os.path.basename(file_path)}")
+    
+    if dry_run:
+        print(f"\nDry run mode - analysis would be performed but no files would be generated.")
+        return
+    
+    # Run the actual QA analysis
+    print(f"\nStarting QA analysis...")
+    run_qa_single_path(config.data_path, func_path, config.extension, config.filename_pattern, config.output_base_dir, output_pattern)
 
 if __name__ == "__main__":
-    # Location of data
-    # I usually setup my data with a main folder, e.g. fMRI_data_sub01
-    # Then inside this I have my fMRI data inside a subfolder fMRI_data_sub01/magnitude/
-    ##mypathname = '/Users/spmic/data/tw_testing_may_2025/'
-    ##pathname_m = mypathname + 'magnitude/'
-    ##extension = '.nii' #this can be .nii or .nii.gz
-
-    # Search pattern for filenames
-    ##filename_pattern = 'digitmap*'
-
-    mypathname = '/Users/cmilbourn/Documents/Sweet_Data/Development_Data/Sweet_Data_BIDS_Dev/sub001/sub001-visit001/'
-    pathname_m = mypathname + 'func/'
-    extension = '.nii.gz' #this can be .nii or .nii.gz
-
-    # Search pattern for filenames
-    filename_pattern = '*task-rest-bold'
+    # Setup argument parser
+    parser = setup_argparser()
+    args = parser.parse_args()
     
-    # Run the QA analysis
-    run_qa_single_path(mypathname, pathname_m, extension, filename_pattern)
-
-    core_filenames = set(
-        os.path.splitext(os.path.splitext(os.path.basename(file_path))[0])[0]  # Handle double extensions
-        for file_path in glob(os.path.join(pathname_m, filename_pattern + extension))
-    )
-
-    print("Files found:", glob(os.path.join(pathname_m, filename_pattern + extension)))
-    print("Core filenames:", core_filenames)
-    print("Now beginning loop")
-     
-    # Loop over each core filename found
-    for core_filename in core_filenames:
-
-        print(f"{core_filename}")
-
-        # Create an output directory for saving plots
-        # output_directory = mypathname + 'qa_output_' + core_filename  # Original version
-        subject_number = extract_subject_number(core_filename)
-        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-        output_directory = '/Users/cmilbourn/Documents/Sweet_Data/Development_Data/QA_output/' + subject_number + '_qa_output_' + core_filename + '_' + timestamp
-        os.makedirs(output_directory, exist_ok=True)
-        OUTPUT_DIR = os.path.abspath(output_directory)
-
-        print(f"{OUTPUT_DIR}")
-
-        # Create a dictionary to store loaded data for each core filename
-        file_data = {}
-
-        # Find the corresponding magnitude (.nii) and phase (_ph.nii) files for the current core filename
-        mag_file_path = os.path.join(pathname_m, core_filename + extension)
-        print(mag_file_path)
-        # Load magnitude data only
-        print('Loading just mag')
-        imgm_cla, imgm_cla_affine = load_data(mag_file_path)
-        #imgp_cla, imgp_cla_affine = load_data(phase_file_path)
-
-        print(mag_file_path)
-        #print(phase_file_path)
-
-        # MASK
-        mask_path = find_mask_file(pathname_m)
-        if mask_path:
-            print(f"Found mask: {mask_path}")
-            mask_data, mask_affine = load_data(mask_path)
+    # Handle special commands
+    if args.list_configs:
+        list_available_configs()
+        exit(0)
+    
+    if args.create_example_config:
+        create_example_config(args.create_example_config)
+        exit(0)
+    
+    try:
+        # Get base configuration
+        if args.config_file:
+            # Load configuration from file
+            config = load_config_from_file(args.config_file)
         else:
-            print("No mask file found.")
-            mask_data = None
+            # Use predefined configuration
+            config = DATASET_CONFIGS[args.config]
+            # Create a copy to avoid modifying the original
+            import copy
+            config = copy.deepcopy(config)
         
-        # Store loaded data in the dictionary with the core filename as the key
-        file_data[core_filename] = (imgm_cla)
-
-        # Process and plot data
-        #process_data_nophase(imgm_cla, imgm_cla_affine, core_filename, OUTPUT_DIR)
-        process_data_nophase(imgm_cla, imgm_cla_affine, core_filename, OUTPUT_DIR, mask_data, nifti_path=mag_file_path)
+        # Validate and apply user overrides
+        config = validate_config(config, args)
+        
+        # Save configuration if requested
+        if args.save_config:
+            save_config_to_file(config, args.save_config)
+        
+        # Run QA analysis with the configuration
+        run_qa_with_config(config, dry_run=args.dry_run, verbose=args.verbose, output_pattern=args.output_pattern)
+        
+    except Exception as e:
+        print(f"Error: {e}")
+        print("\nFor help with configuration options, run:")
+        print("python qa_run_nophase_V2_wrapper.py --help")
+        print("python qa_run_nophase_V2_wrapper.py --list-configs")
+        exit(1)
