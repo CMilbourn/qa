@@ -95,7 +95,7 @@ def get_tr_from_json(nifti_path):
     Parameters:
     -----------
     nifti_path : str
-        Path to the NIfTI file (e.g., sub001-task-rest-bold.nii.gz)
+        Path to the NIfTI file (e.g., sub001-task-rest-asl.nii.gz)
         
     Returns:
     --------
@@ -133,7 +133,7 @@ def extract_subject_number(filename):
     Parameters:
     -----------
     filename : str
-        Core filename (e.g., 'sub001-visit001-ses001-task-rest-bold')
+        Core filename (e.g., 'sub001-visit001-ses001-task-rest-asl')
         
     Returns:
     --------
@@ -204,7 +204,8 @@ def process_data_nophase(imgm_cla, imgm_affine, core_filename, output_dir, mask_
     # # plt.show()  # Disabled for script mode  # Disabled for script mode
 
     # Assuming you have created a plot `plt` and want to save it as a PNG file
-    output_filename = 'Mean_image.png'
+    timestamp_str = datetime.now().strftime("%Y%m%d_%H%M%S")
+    output_filename = f'Mean_image_ASL_{timestamp_str}.png'
     output_path = f"{output_dir}/{output_filename}"  # Construct the full output path
     fig.savefig(output_path, dpi=300)  # Save the plot as a PNG file with 300 dpi resolution
     plt.close()  # Close the plot to free up memory
@@ -233,7 +234,7 @@ def process_data_nophase(imgm_cla, imgm_affine, core_filename, output_dir, mask_
     fig.tight_layout(pad=0.3)
     
     # Save output
-    output_filename = 'mean_montage.png'
+    output_filename = f'mean_montage_ASL_{timestamp_str}.png'
     output_path = f"{output_dir}/{output_filename}"
     plt.savefig(output_path, dpi=300, bbox_inches='tight')
 
@@ -301,14 +302,15 @@ def process_data_nophase(imgm_cla, imgm_affine, core_filename, output_dir, mask_
     plt.tight_layout()
     # plt.show()  # Disabled for script mode
     # Save the image
-    output_filename = 'masked_noise.png'
+    output_filename = f'masked_noise_ASL_{timestamp_str}.png'
     output_path = f"{output_dir}/{output_filename}"
     fig.savefig(output_path, dpi=300)  
     plt.close()  # Close to free up memory
     
     
     isnr_obj_cla = snr.Isnr(imgm_cla, imgm_affine, noise_mask=masked_noise)
-    isnr_obj_cla.to_nifti(output_dir, 'isnr')
+    timestamp_str = datetime.now().strftime("%Y%m%d_%H%M%S")
+    isnr_obj_cla.to_nifti(output_dir, f'isnr_ASL_{timestamp_str}')
     print(f'Image has an iSNR of {np.mean(isnr_obj_cla.isnr):.2f}.')
     print(f'Noise value used for iSNR: {np.mean(isnr_obj_cla.noise):.2f}')
 
@@ -327,7 +329,7 @@ def process_data_nophase(imgm_cla, imgm_affine, core_filename, output_dir, mask_
     fig.tight_layout(pad=0.5)
     ## plt.show()  # Disabled for script mode
     # Save the montage
-    output_filename = 'noise_volume_montage.png'
+    output_filename = f'noise_volume_montage_ASL_{timestamp_str}.png'
     output_path = f"{output_dir}/{output_filename}"
     plt.savefig(output_path, dpi=300)
     #plt.close()  # Free memory
@@ -343,7 +345,7 @@ def process_data_nophase(imgm_cla, imgm_affine, core_filename, output_dir, mask_
     fig.tight_layout(pad=0.5)
     ## plt.show()  # Disabled for script mode
     # Save the montage
-    output_filename = 'masked_noise_volume_montage.png'
+    output_filename = f'masked_noise_volume_montage_ASL_{timestamp_str}.png'
     output_path = f"{output_dir}/{output_filename}"
     plt.savefig(output_path, dpi=300)
     #plt.close()  # Free memory
@@ -359,7 +361,7 @@ def process_data_nophase(imgm_cla, imgm_affine, core_filename, output_dir, mask_
     # Adjust layout and display the plot
     plt.tight_layout()
     # plt.show()  # Disabled for script mode
-    output_filename = 'iSNR_sag.png'
+    output_filename = f'iSNR_sag_ASL_{timestamp_str}.png'
     output_path = f"{output_dir}/{output_filename}"  # Construct the full output path
     fig.savefig(output_path, dpi=300)  # Save the plot as a PNG file with 300 dpi resolution
     plt.close()  # Close the plot to free up memory
@@ -375,7 +377,7 @@ def process_data_nophase(imgm_cla, imgm_affine, core_filename, output_dir, mask_
     # Adjust layout and display the plot
     plt.tight_layout()
     # plt.show()  # Disabled for script mode
-    output_filename = 'iSNR_cor.png'
+    output_filename = f'iSNR_cor_ASL_{timestamp_str}.png'
     output_path = f"{output_dir}/{output_filename}"  # Construct the full output path
     fig.savefig(output_path, dpi=300)  # Save the plot as a PNG file with 300 dpi resolution
     plt.close()  # Close the plot to free up memory
@@ -394,7 +396,7 @@ def process_data_nophase(imgm_cla, imgm_affine, core_filename, output_dir, mask_
     fig.tight_layout(pad=0.5)
 
     # Save the montage as a PNG file
-    output_filename = 'isnr_montage.png'
+    output_filename = f'isnr_montage_ASL_{timestamp_str}.png'
     output_path = f"{output_dir}/{output_filename}"
     plt.savefig(output_path, dpi=300)  # Save the montage as a PNG file with 300 dpi resolution
 
@@ -407,7 +409,7 @@ def process_data_nophase(imgm_cla, imgm_affine, core_filename, output_dir, mask_
 
     # Save as NIFTI 
     tsnr_obj_cla = snr.Tsnr(imgm_cla_nn, imgm_affine)
-    tsnr_obj_cla.to_nifti(output_dir, 'tsnr')
+    tsnr_obj_cla.to_nifti(output_dir, f'tsnr_ASL_{timestamp_str}')
 
     print(tsnr_obj_cla.tsnr_map.shape)
 
@@ -498,7 +500,7 @@ def process_data_nophase(imgm_cla, imgm_affine, core_filename, output_dir, mask_
     
     if TR is None:
         # Fall back to default TR if not found in JSON
-        TR = 1.4  # Default for MB3 BOLD data
+        TR = 1.4  # Default for MB3 asl data
         print(f"Using default TR = {TR}s (no JSON file found or RepetitionTime not specified)")
     else:
         print(f"Using TR = {TR}s from JSON metadata")
@@ -521,7 +523,7 @@ def process_data_nophase(imgm_cla, imgm_affine, core_filename, output_dir, mask_
     
     # Save the new map as a NIfTI
     tsnr_unit_time_img = nib.Nifti1Image(tsnr_unit_time_map, affine=imgm_affine)
-    nib.save(tsnr_unit_time_img, f"{output_dir}/tsnr_unit_time.nii.gz")
+    nib.save(tsnr_unit_time_img, f"{output_dir}/tsnr_unit_time_ASL_{timestamp_str}.nii.gz")
     
     # (Optional) Compute mean and log it
     mean_tsnr_unit_time = np.mean(tsnr_unit_time_map)
@@ -760,7 +762,8 @@ def process_data_nophase(imgm_cla, imgm_affine, core_filename, output_dir, mask_
     print("\n" + "="*80)
     
     # Save summary to text file
-    summary_filename = 'QA_Summary.txt'
+    timestamp_str = datetime.now().strftime("%Y%m%d_%H%M%S")
+    summary_filename = f'QA_Summary_ASL_{timestamp_str}.txt'
     summary_path = f"{output_dir}/{summary_filename}"
     
     with open(summary_path, 'w') as f:
@@ -781,7 +784,7 @@ def process_data_nophase(imgm_cla, imgm_affine, core_filename, output_dir, mask_
     print(f"Summary saved to: {summary_path}")
 
     # Create a CSV summary for easy import into other tools
-    csv_filename = 'QA_Summary.csv'
+    csv_filename = f'QA_Summary_ASL_{timestamp_str}.csv'
     csv_path = f"{output_dir}/{csv_filename}"
     
     import csv
@@ -856,7 +859,7 @@ def process_data_nophase(imgm_cla, imgm_affine, core_filename, output_dir, mask_
             title_p = title_frame.paragraphs[0]
             title_p.text = f"Mean Image (Slice {slice_index})"
             title_p.font.size = Pt(24)
-            title_p.font.bold = True
+            title_p.font.out = True
             
             # Add mean image
             mean_img_path = f"{output_dir}/Mean_image.png"
@@ -1031,7 +1034,7 @@ def process_data_nophase(imgm_cla, imgm_affine, core_filename, output_dir, mask_
                 p.font.size = Pt(12)
             
             # Save PowerPoint
-            pptx_filename = 'QA_Report.pptx'
+            pptx_filename = f'QA_Report_ASL_{timestamp_str}.pptx'
             pptx_path = f"{output_dir}/{pptx_filename}"
             prs.save(pptx_path)
             
@@ -1146,7 +1149,7 @@ DATASET_CONFIGS = {
         data_path='/Users/cmilbourn/Documents/Sweet_Data/Development_Data/Sweet_Data_BIDS_Dev/sub001/sub001-visit001/',
         func_subdir='func/',
         extension='.nii.gz',
-        filename_pattern='*task-rest-bold',
+        filename_pattern='*task-rest-asl',
         output_base_dir='/Users/cmilbourn/Documents/Sweet_Data/Development_Data/QA_output/'
     ),
     'bids_generic': DatasetConfig(
@@ -1155,7 +1158,7 @@ DATASET_CONFIGS = {
         data_path='',  # To be specified by user
         func_subdir='func/',
         extension='.nii.gz',
-        filename_pattern='*bold',
+        filename_pattern='*asl',
         output_base_dir=''  # To be specified by user
     ),
     'legacy_digitmap': DatasetConfig(
@@ -1205,12 +1208,12 @@ Dataset Configuration Examples:
      --data-path /path/to/data/ \\
      --func-subdir func/ \\
      --extension .nii.gz \\
-     --pattern "*task-rest-bold" \\
+     --pattern "*task-rest-asl" \\
      --output-dir /path/to/output/
 
 5. Override specific parameters:
    python qa_run_nophase_V2_wrapper.py --config bids_sweet \\
-     --pattern "*task-motor-bold" \\
+     --pattern "*task-motor-asl" \\
      --output-dir /custom/output/path/
         """)
     
@@ -1248,7 +1251,7 @@ Dataset Configuration Examples:
                        help='File extension (e.g., .nii.gz, .nii) (overrides config default)')
     
     parser.add_argument('--pattern', '-p',
-                       help='Filename pattern (e.g., *task-rest-bold) (overrides config default)')
+                       help='Filename pattern (e.g., *task-rest-asl) (overrides config default)')
     
     # Processing options
     parser.add_argument('--dry-run', action='store_true',
@@ -1329,7 +1332,7 @@ def create_example_config(config_file_path):
         "_comment5": "File extension for your NIfTI files",
         "extension": ".nii.gz",
         "_comment6": "Pattern to match functional files (without extension)",
-        "filename_pattern": "*task-rest-bold",
+        "filename_pattern": "*task-rest-asl",
         "_comment7": "Base directory where QA output will be saved",
         "output_base_dir": "/path/to/qa/output/"
     }

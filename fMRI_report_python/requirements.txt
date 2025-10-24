@@ -1,4 +1,5 @@
 numpy
 matplotlib
 nibabel
-scipypython-pptx
+scipy
+python-pptx
