@@ -1,0 +1,1460 @@
+#!/usr/bin/env python
+# coding: utf-8
+# qa_run_nophase_V2.py based on qa_run_nophase.ipynb  
+# version update 20251016: change output directory
+# # Quality Assurance (QA) Python Version
+# qa_run_nophase_V2.py
+# This notebook gives example uses of image based QA metrics in `qa`.
+# 
+# A large chunk of this code has been taken from Alex Daniel's `ukat` code: https://github.com/UKRIN-MAPS/ukat.
+# 
+# We'll start with some imports and general housekeeping.
+# 
+# Reference for tSNR: https://doi.org/10.1016/j.neuroimage.2005.01.007
+
+# ## READ THIS INFO
+# 
+# - Scroll down to the bottom to set paths etc. The key things to change are
+# `mypathname = '/Users/spmic/data/tw_testing_may_2025/'`
+# `pathname_m = mypathname + 'magnitude/'`
+# `extension = '.nii' #this can be .nii or .nii.gz`
+# `filename_pattern = 'digitmap*'`
+# 
+# - Just add your path to the `qa` github folder here
+# 
+# - There is a line `noise_volume = imgm_cla[:, :, :, -1]` This grabs the last scan, assumes it is noise and uses it for iSNR.
+# 
+# - In the function `process_data_nophase` there are options to set slices/scales/sizes for patch ROI etc. near the top
+# 
+# - There is a bit that calculates the tSNR per unit time using the TR, this makes a separate PNG, can ignore this or set the TR yourself. Shouldn't affect anything else.
+# 
+# - If you have a nifti with the word `mask` in it, in the same folder, then it will find this and mask your data by it.
+
+import sys
+sys.path.append('/Users/cmilbourn/Documents/GitHub/qa/')  # ** change line to match code folder location **
+print(sys.path)
+
+import os
+import numpy as np
+import matplotlib
+matplotlib.use('Agg')  # Use non-interactive backend
+import matplotlib.pyplot as plt
+import matplotlib.patches as patches
+from matplotlib.colors import Normalize
+import nibabel as nib
+from glob import glob
+import subprocess
+import json
+from datetime import datetime
+import argparse
+
+# PowerPoint generation
+try:
+    from pptx import Presentation
+    from pptx.util import Inches, Pt
+    from pptx.enum.text import PP_ALIGN
+    from pptx.dml.color import RGBColor
+    PPTX_AVAILABLE = True
+except ImportError:
+    print("Warning: python-pptx not available. PowerPoint generation will be skipped.")
+    print("To enable PowerPoint generation, install python-pptx: pip install python-pptx")
+    PPTX_AVAILABLE = False
+
+#from ukat.data import fetch
+from fMRI_report_python.functions import snr
+#from fMRI_report_python.functions.snr import some_function
+#from functions import snr
+from scipy.signal import detrend
+
+from mpl_toolkits.mplot3d import Axes3D  # Needed for 3D plotting
+
+# check packages
+print(snr)
+print(dir(snr))
+
+# make the loading a bit easier inline
+def load_data(inputdatafilename):
+    #Function to load in data 
+    #Needs an input arg
+    data = nib.load(inputdatafilename)
+    image = data.get_fdata()
+    return image, data.affine
+
+# Function to find a file containing "mask" in its name
+def find_mask_file(directory):
+    for filename in os.listdir(directory):
+        if "mask" in filename.lower() and filename.endswith(('.nii', '.nii.gz')):
+            return os.path.join(directory, filename)
+    return None
+
+# Function to read TR from BIDS JSON sidecar file
+def get_tr_from_json(nifti_path):
+    """
+    Read RepetitionTime from BIDS JSON sidecar file
+    
+    Parameters:
+    -----------
+    nifti_path : str
+        Path to the NIfTI file (e.g., sub001-task-rest-bold.nii.gz)
+        
+    Returns:
+    --------
+    float or None
+        RepetitionTime in seconds, or None if not found
+    """
+    # Construct JSON filename by replacing .nii.gz or .nii with .json
+    json_path = nifti_path.replace('.nii.gz', '.json').replace('.nii', '.json')
+    
+    if os.path.exists(json_path):
+        try:
+            with open(json_path, 'r') as f:
+                metadata = json.load(f)
+            
+            tr = metadata.get('RepetitionTime')
+            if tr is not None:
+                print(f"Found TR = {tr}s in JSON file: {json_path}")
+                return float(tr)
+            else:
+                print(f"RepetitionTime not found in JSON file: {json_path}")
+                return None
+                
+        except Exception as e:
+            print(f"Error reading JSON file {json_path}: {e}")
+            return None
+    else:
+        print(f"No JSON sidecar found at: {json_path}")
+        return None
+
+# Function to extract subject number from filename
+def extract_subject_number(filename):
+    """
+    Extract subject number from BIDS-style filename
+    
+    Parameters:
+    -----------
+    filename : str
+        Core filename (e.g., 'sub001-visit001-ses001-task-rest-bold')
+        
+    Returns:
+    --------
+    str
+        Subject number (e.g., 'sub001') or 'unknown' if not found
+    """
+    import re
+    
+    # Look for pattern sub### where ### can be any number of digits
+    match = re.search(r'sub(\d+)', filename)
+    if match:
+        return f"sub{match.group(1)}"
+    else:
+        # Fallback: try to find 'sub' followed by any alphanumeric characters
+        match = re.search(r'(sub[a-zA-Z0-9]+)', filename)
+        if match:
+            return match.group(1)
+    
+    return 'unknown'
+
+def process_data_nophase(imgm_cla, imgm_affine, core_filename, output_dir, mask_data=None, TR=None, nifti_path=None):
+    # This is our big function
+    # I had to condense all the functionality of the notebook into this one func, to make the for loop in the script easier
+    # So, first it plots the mean images
+    # Calculates iSNR
+    # Calculates tSNR
+    # Calculates tSNR in a patch ROI
+    # Plots signal and std of signal in patch over time
+    # Plots static spatial noise image
+    # OUTPUTS: 
+    # tSNR images saved as nii.gz
+    # Lots of PNG images of every plot
+
+    ############################## Plotting mean images
+    # Set slice (3d) and time (4d)
+    #slice_index = round(imgm_cla.shape[2] * 2 / 3)
+    slice_index = 12
+    slice_index_sag = 50 #60 50
+    slice_index_cor = 50 #65 55
+    print(f"Slice index: {slice_index}")
+    time_point = 1
+    tsnrScale = 100
+    isnrScale = 100
+    #isnrScale = 10
+
+    # We want to define a patch ROI
+    # Define parameters for ROI size and position
+    x_start = 60  # Starting x-coordinate of the ROI
+    y_start = 80 # Starting y-coordinate of the ROI
+    roi_width = 20  # Width of the ROI
+    roi_height = 20  # Height of the ROI
+
+    # if mask_data is not None:
+    #     masked_img = imgm_cla[mask_data > 0]
+
+    mean_img = np.mean(imgm_cla, axis=3)
+    
+    # Create a 2x2 grid of subplots
+    fig, axs = plt.subplots(1, 1, figsize=(5, 5))  # Adjust figsize as needed
+
+    # Plot imgm_cla
+    axs.imshow(mean_img[:, :, slice_index].T, origin='lower', cmap='gray')
+    axs.set_title(f'Magnitude (Slice {slice_index})')  # Set subplot title with slice index
+    axs.axis(False)  # Turn off axis labels and ticks
+
+    # Adjust layout and display the plot
+    plt.tight_layout()
+    # # plt.show()  # Disabled for script mode  # Disabled for script mode
+
+    # Assuming you have created a plot `plt` and want to save it as a PNG file
+    output_filename = 'Mean_image.png'
+    output_path = f"{output_dir}/{output_filename}"  # Construct the full output path
+    fig.savefig(output_path, dpi=300)  # Save the plot as a PNG file with 300 dpi resolution
+    plt.close()  # Close the plot to free up memory
+
+    # Determine grid size for montage
+    num_slices = imgm_cla.shape[2]
+    rows = int(np.ceil(np.sqrt(num_slices)))
+    cols = int(np.ceil(num_slices / rows))
+    
+    # Create figure with larger size for bigger individual plots
+    figsize_scale = 2.5  # Scale this to make plots larger
+    fig = plt.figure(figsize=(cols * figsize_scale, rows * figsize_scale))
+    
+    # Calculate contrast limits based on percentiles to improve visibility
+    vmin = np.percentile(mean_img, 2)
+    vmax = np.percentile(mean_img, 98)
+    
+    # Loop through slices
+    for i in range(num_slices):
+        ax = fig.add_subplot(rows, cols, i + 1)
+        ax.imshow(mean_img[:, :, i], cmap='gray', vmin=vmin, vmax=vmax)
+        ax.set_title(f"Slice {i}", fontsize=8)  # Smaller font size
+        ax.axis('off')
+    
+    # Tighter layout
+    fig.tight_layout(pad=0.3)
+    
+    # Save output
+    output_filename = 'mean_montage.png'
+    output_path = f"{output_dir}/{output_filename}"
+    plt.savefig(output_path, dpi=300, bbox_inches='tight')
+
+    ############################## iSNR
+    # ISNR show    
+
+    # Compute iSNR
+    # isnr_test = snr.Isnr(imgm_cla, imgm_cla_affine)
+    # # Extract only the first volume from the iSNR map while keeping 4D structure
+    # isnr_test.isnr_map = isnr_test.isnr_map[:, :, :, 0:1]  # Keeps it 4D
+    # # Save as NIFTI
+    # isnr_test.to_nifti(OUTPUT_DIR, 'isnr')
+    # print(f'Image has an iSNR of {isnr_test.isnr:.2f}.', file=output_file)
+
+    #isnr_cla = snr.Isnr(imgm_cla, imgm_cla_affine).isnr
+    #isnr_test = snr.Isnr(imgm_cla, imgm_cla_affine)
+    #isnr_test = isnr_test[:, :, :, 0]
+    # Save as NIFTI 
+    #isnr_test.to_nifti(OUTPUT_DIR, 'isnr')
+    #print(f'Image has an iSNR of {isnr_cla:.2f}.', file=output_file)
+
+    noise_volume = imgm_cla[:, :, :, -1]  # Extract the last volume
+    # if no noise scan, use difference of 2 dynamics
+    # Assuming the volumes you want to subtract are at indices 15 and 16
+    #vol1 = imgm_cla[:, :, :, 3]  # Extract volume 15
+    #vol2 = imgm_cla[:, :, :, 4]  # Extract volume 16
+    # # Calculate the difference between the two volumes
+    #noise_volume = vol1 - vol2
+    # # Replace NaNs with 0
+    noise_volume = np.nan_to_num(noise_volume, nan=0.0)
+
+    
+    # Compute the temporal mean image
+    tmean_img = np.mean(imgm_cla, axis=-1)
+    # Create a brain mask by thresholding (adjust threshold as needed)
+    brain_mask = tmean_img > (0.05 * np.max(tmean_img))  # Example: 10% of max intensity
+    
+    # Apply the mask to the noise volume
+    masked_noise = noise_volume * brain_mask
+
+    masked_mean = mean_img * brain_mask
+    valid_voxels = masked_mean[masked_mean != 0]  # Exclude zeros
+    mean_std = np.std(valid_voxels)  # Compute stddev only for non-zero voxels
+    print(f'Mean volume std = {mean_std:.2f}.')
+    
+    fig, axs = plt.subplots(1, 3, figsize=(15, 5))  # 3 subplots in one row
+    # Plot Noise Volume
+    im1 = axs[0].imshow(noise_volume[:, :, slice_index].T, origin='lower', cmap='viridis')
+    axs[0].set_title("Noise Volume")
+    axs[0].axis(False)
+    fig.colorbar(im1, ax=axs[0])
+    
+    # Plot Brain Mask
+    im2 = axs[1].imshow(brain_mask[:, :, slice_index].T, origin='lower', cmap='gray')
+    axs[1].set_title("Brain Mask")
+    axs[1].axis(False)
+    fig.colorbar(im2, ax=axs[1])
+    
+    # Plot Masked Noise
+    im3 = axs[2].imshow(masked_noise[:, :, slice_index].T, origin='lower', cmap='viridis')
+    axs[2].set_title("Masked Noise")
+    axs[2].axis(False)
+    fig.colorbar(im3, ax=axs[2])
+    # Adjust layout and display
+    plt.tight_layout()
+    # plt.show()  # Disabled for script mode
+    # Save the image
+    output_filename = 'masked_noise.png'
+    output_path = f"{output_dir}/{output_filename}"
+    fig.savefig(output_path, dpi=300)  
+    plt.close()  # Close to free up memory
+    
+    
+    isnr_obj_cla = snr.Isnr(imgm_cla, imgm_affine, noise_mask=masked_noise)
+    isnr_obj_cla.to_nifti(output_dir, 'isnr')
+    print(f'Image has an iSNR of {np.mean(isnr_obj_cla.isnr):.2f}.')
+    print(f'Noise value used for iSNR: {np.mean(isnr_obj_cla.noise):.2f}')
+
+    # Plot Noise volume montage
+    # Define the number of rows and columns for montage
+    num_slices = noise_volume.shape[2]  # Number of slices
+    
+    # Create a figure for the montage
+    fig = plt.figure(figsize=(15, 15))  # Adjust figure size
+    for i in range(num_slices):
+        ax = fig.add_subplot(rows, cols, i + 1)  # Create subplot for each slice
+        ax.imshow(noise_volume[:, :, i], cmap='gray', clim=(0, 2000))  # Display slice
+        ax.set_title(f"Slice {i}")  # Label each slice
+        ax.axis('off')  # Hide axes
+    # Adjust layout
+    fig.tight_layout(pad=0.5)
+    ## plt.show()  # Disabled for script mode
+    # Save the montage
+    output_filename = 'noise_volume_montage.png'
+    output_path = f"{output_dir}/{output_filename}"
+    plt.savefig(output_path, dpi=300)
+    #plt.close()  # Free memory
+
+    # Create a figure for the montage
+    fig = plt.figure(figsize=(15, 15))  # Adjust figure size
+    for i in range(num_slices):
+        ax = fig.add_subplot(rows, cols, i + 1)  # Create subplot for each slice
+        ax.imshow(masked_noise[:, :, i], cmap='gray', clim=(0, 2000))  # Display slice
+        ax.set_title(f"Slice {i}")  # Label each slice
+        ax.axis('off')  # Hide axes
+    # Adjust layout
+    fig.tight_layout(pad=0.5)
+    ## plt.show()  # Disabled for script mode
+    # Save the montage
+    output_filename = 'masked_noise_volume_montage.png'
+    output_path = f"{output_dir}/{output_filename}"
+    plt.savefig(output_path, dpi=300)
+    #plt.close()  # Free memory
+
+    # plot iSNR SAG
+    fig, axs = plt.subplots(1, 1, figsize=(12,6))  # Adjust figsize as needed
+    # Plot imgm_cla
+    im_cla = axs.imshow(isnr_obj_cla.isnr_map[slice_index_sag,:,:, time_point].T, origin='lower', cmap='inferno', clim=(0, isnrScale))
+    axs.set_title(f'iSNR Map (Slice {slice_index})')  # Set subplot title with slice index
+    axs.axis(False)  # Turn off axis labels and ticks
+    cb = fig.colorbar(im_cla, ax=axs, shrink=0.3)
+    cb.set_label('iSNR')
+    # Adjust layout and display the plot
+    plt.tight_layout()
+    # plt.show()  # Disabled for script mode
+    output_filename = 'iSNR_sag.png'
+    output_path = f"{output_dir}/{output_filename}"  # Construct the full output path
+    fig.savefig(output_path, dpi=300)  # Save the plot as a PNG file with 300 dpi resolution
+    plt.close()  # Close the plot to free up memory
+
+    # plot iSNR COR
+    fig, axs = plt.subplots(1, 1, figsize=(12,6))  # Adjust figsize as needed
+    # Plot imgm_cla
+    im_cla = axs.imshow(isnr_obj_cla.isnr_map[:,slice_index_cor,:, time_point].T, origin='lower', cmap='inferno', clim=(0, isnrScale))
+    axs.set_title(f'iSNR Map (Slice {slice_index})')  # Set subplot title with slice index
+    axs.axis(False)  # Turn off axis labels and ticks
+    cb = fig.colorbar(im_cla, ax=axs, shrink=0.3)
+    cb.set_label('iSNR')
+    # Adjust layout and display the plot
+    plt.tight_layout()
+    # plt.show()  # Disabled for script mode
+    output_filename = 'iSNR_cor.png'
+    output_path = f"{output_dir}/{output_filename}"  # Construct the full output path
+    fig.savefig(output_path, dpi=300)  # Save the plot as a PNG file with 300 dpi resolution
+    plt.close()  # Close the plot to free up memory
+
+    # iSNR MONTAGE
+    fig = plt.figure(figsize=(10, 10))  # Adjust figsize as needed
+    for i in range(isnr_obj_cla.isnr_map.shape[2]):
+        # Create a subplot for the current slice
+        ax = fig.add_subplot(rows, cols, i + 1)  # i+1 because subplot indices start from 1
+        # Display the current slice using imshow
+        ax.imshow(isnr_obj_cla.isnr_map[:, :, i, time_point], cmap='inferno', clim=(0, isnrScale))  # Adjust colormap as needed
+        ax.set_title(f"Slice {i}")  # Set title with slice index
+        ax.axis('off')  # Turn off axis labels and ticks
+    
+    # Adjust layout and spacing of subplots
+    fig.tight_layout(pad=0.5)
+
+    # Save the montage as a PNG file
+    output_filename = 'isnr_montage.png'
+    output_path = f"{output_dir}/{output_filename}"
+    plt.savefig(output_path, dpi=300)  # Save the montage as a PNG file with 300 dpi resolution
+
+    ############################## tSNR
+    # need to remove noise scan
+    imgm_cla_nn = imgm_cla[:, :, :, :-1]  # Exclude the last volume along the time dimension
+
+    #imgm_cla_nn = imgm_cla[:, :, :, :20]  # take first 20 dynamics.
+    #imgm_cla_nn = imgm_cla #
+
+    # Save as NIFTI 
+    tsnr_obj_cla = snr.Tsnr(imgm_cla_nn, imgm_affine)
+    tsnr_obj_cla.to_nifti(output_dir, 'tsnr')
+
+    print(tsnr_obj_cla.tsnr_map.shape)
+
+    my_mean_tsnr = np.mean(tsnr_obj_cla.tsnr_map)
+    print("Mean tSNR:", my_mean_tsnr)
+
+    if mask_data is not None:
+
+        # Thresholded tSNR inside mask
+        tsnr_threshold = np.percentile(tsnr_obj_cla.tsnr_map[mask_data > 0], 50)
+        voxels_to_plot = (tsnr_obj_cla.tsnr_map > tsnr_threshold) & (mask_data > 0)
+
+        print("Found mask")
+        masked_tSNR = tsnr_obj_cla.tsnr_map[mask_data > 0]
+        print("Mean tSNR in mask:", np.mean(masked_tSNR))
+        # Plot a tSNR slice with masking
+        thisslice = tsnr_obj_cla.tsnr_map.shape[2] // 2  # Middle slice
+        tsnr_slice = tsnr_obj_cla.tsnr_map[:, :, thisslice]
+        mask_slice = mask_data[:, :, thisslice]
+
+        fig, ax = plt.subplots(1, 1, figsize=(8, 8))
+        im = ax.imshow(np.rot90(np.where(mask_slice > 0, tsnr_slice, np.nan)), 
+                       cmap='inferno', vmin=0, vmax=np.nanmax(tsnr_slice))
+        ax.set_title(f"tSNR (slice {thisslice}) in mask")
+        ax.axis('off')
+        cb = fig.colorbar(im, ax=ax, shrink=0.6)
+        cb.set_label('tSNR')
+        plt.tight_layout()
+        # plt.show()  # Disabled for script mode
+        fig.savefig(os.path.join(output_dir, "tSNR_masked_slice.png"), dpi=300)
+        plt.close()
+        
+        # 3D plot
+        fig = plt.figure(figsize=(10, 10))
+        ax = fig.add_subplot(111, projection='3d')
+        
+        # Overlay masked tSNR voxels
+        ax.voxels(voxels_to_plot, facecolors='orange', edgecolor='k', alpha=0.6)
+        
+        ax.set_title("3D tSNR voxels")
+        ax.set_xlabel('X')
+        ax.set_ylabel('Y')
+        ax.set_zlabel('Z')
+        plt.tight_layout()
+        plt.savefig(os.path.join(output_dir, "tSNR_masked_3D.png"), dpi=300)
+        plt.close()
+
+    # tSNR SAG
+    fig, axs = plt.subplots(1, 1, figsize=(12,6))  # Adjust figsize as needed
+    # Plot imgm_cla
+    im_cla = axs.imshow(tsnr_obj_cla.tsnr_map[slice_index_sag,:,:].T, origin='lower', cmap='inferno', clim=(0, tsnrScale))
+    #im_cla = axs.imshow(isnr_obj_cla.isnr_map[:,:,slice_index, time_point].T, origin='lower', cmap='inferno')
+    axs.set_title(f'tSNR Map (Slice {slice_index})')  # Set subplot title with slice index
+    axs.axis(False)  # Turn off axis labels and ticks
+    cb = fig.colorbar(im_cla, ax=axs, shrink=0.3)
+    cb.set_label('tSNR')
+    # Adjust layout and display the plot
+    plt.tight_layout()
+    # plt.show()  # Disabled for script mode
+    output_filename = 'tSNR_sag.png'
+    output_path = f"{output_dir}/{output_filename}"  # Construct the full output path
+    fig.savefig(output_path, dpi=300)  # Save the plot as a PNG file with 300 dpi resolution
+    plt.close()  # Close the plot to free up memory
+
+    # tSNR COR
+    fig, axs = plt.subplots(1, 1, figsize=(12,6))  # Adjust figsize as needed
+    # Plot imgm_cla
+    im_cla = axs.imshow(tsnr_obj_cla.tsnr_map[:,slice_index_cor,:].T, origin='lower', cmap='inferno', clim=(0, tsnrScale))
+    #im_cla = axs.imshow(isnr_obj_cla.isnr_map[:,:,slice_index, time_point].T, origin='lower', cmap='inferno')
+    axs.set_title(f'tSNR Map (Slice {slice_index})')  # Set subplot title with slice index
+    axs.axis(False)  # Turn off axis labels and ticks
+    cb = fig.colorbar(im_cla, ax=axs, shrink=0.3)
+    cb.set_label('tSNR')
+    # Adjust layout and display the plot
+    plt.tight_layout()
+    # plt.show()  # Disabled for script mode
+    output_filename = 'tSNR_cor.png'
+    output_path = f"{output_dir}/{output_filename}"  # Construct the full output path
+    fig.savefig(output_path, dpi=300)  # Save the plot as a PNG file with 300 dpi resolution
+    plt.close()  # Close the plot to free up memory
+
+    #### tSNR per unit time ######
+    
+    # Determine TR (RepetitionTime) from multiple sources
+    if TR is None and nifti_path is not None:
+        # Try to read TR from JSON sidecar file
+        TR = get_tr_from_json(nifti_path)
+    
+    if TR is None:
+        # Fall back to default TR if not found in JSON
+        TR = 1.4  # Default for MB3 BOLD data
+        print(f"Using default TR = {TR}s (no JSON file found or RepetitionTime not specified)")
+    else:
+        print(f"Using TR = {TR}s from JSON metadata")
+    
+    # Set Ernst angle scaling factor based on TR
+    # These are approximate values for typical T1 relaxation times
+    if TR <= 0.7:
+        ErnstScaling = 0.5745  # For very short TR
+    elif TR <= 1.0:
+        ErnstScaling = 0.7071  # For short TR  
+    elif TR <= 1.5:
+        ErnstScaling = 0.8155  # For medium TR
+    else:
+        ErnstScaling = 1.0     # For longer TR (TR >= 2s, T1 = 2132ms)
+    
+    print(f"Using Ernst scaling factor = {ErnstScaling} for TR = {TR}s")
+
+    # Compute tSNR per unit time
+    tsnr_unit_time_map = (tsnr_obj_cla.tsnr_map / np.sqrt(TR)) * ErnstScaling
+    
+    # Save the new map as a NIfTI
+    tsnr_unit_time_img = nib.Nifti1Image(tsnr_unit_time_map, affine=imgm_affine)
+    nib.save(tsnr_unit_time_img, f"{output_dir}/tsnr_unit_time.nii.gz")
+    
+    # (Optional) Compute mean and log it
+    mean_tsnr_unit_time = np.mean(tsnr_unit_time_map)
+    print("Mean tSNR per unit time:", mean_tsnr_unit_time)
+    
+    # Plot and save image
+    fig_ut, axs_ut = plt.subplots(1, 1, figsize=(8, 8))
+    im_ut = axs_ut.imshow(np.rot90(tsnr_unit_time_map[:, :, slice_index]), cmap='inferno', clim=(0, tsnrScale))
+    axs_ut.set_title(f'tSNR per unit time (slc {slice_index})')
+    axs_ut.axis(False)
+    cb_ut = fig_ut.colorbar(im_ut, ax=axs_ut, shrink=0.6)
+    cb_ut.set_label('tSNR / √TR')
+    
+    fig_ut.tight_layout()
+    # plt.show()  # Disabled for script mode
+    fig_ut.savefig(f"{output_dir}/tSNR_per_unit_time.png", dpi=300)
+    plt.close(fig_ut)
+
+    # Plot and save raw tSNR image
+    fig_raw, axs_raw = plt.subplots(1, 1, figsize=(8, 8))
+    im_raw = axs_raw.imshow(np.rot90(tsnr_obj_cla.tsnr_map[:, :, slice_index]), cmap='inferno', clim=(0, tsnrScale))
+    axs_raw.set_title(f'raw tSNR (slc {slice_index})')
+    axs_raw.axis(False)
+    cb_raw = fig_raw.colorbar(im_raw, ax=axs_raw, shrink=0.6)
+    cb_raw.set_label('tSNR')
+    fig_raw.tight_layout()
+    # plt.show()  # Disabled for script mode
+    fig_raw.savefig(f"{output_dir}/tSNR_raw.png", dpi=300)
+    plt.close(fig_raw)
+
+    ##############################
+    
+    # now montage tSNR
+    # Determine grid size for montage
+    num_slices = tsnr_obj_cla.tsnr_map.shape[2]
+    rows = int(np.ceil(np.sqrt(num_slices)))
+    cols = int(np.ceil(num_slices / rows))
+    
+    # Create figure with larger size for bigger individual plots
+    figsize_scale = 2.5  # Scale this to make plots larger
+    fig = plt.figure(figsize=(cols * figsize_scale, rows * figsize_scale))
+    
+    # Loop through slices
+    for i in range(num_slices):
+        ax = fig.add_subplot(rows, cols, i + 1)
+        ax.imshow(tsnr_obj_cla.tsnr_map[:, :, i], cmap='inferno', clim=(0, tsnrScale))
+        ax.set_title(f"Slice {i}", fontsize=8)  # Smaller font size
+        ax.axis('off')
+    
+    # Tighter layout
+    fig.tight_layout(pad=0.3)
+    
+    # Save output
+    output_filename = 'tSNR_montage.png'
+    output_path = f"{output_dir}/{output_filename}"
+    plt.savefig(output_path, dpi=300, bbox_inches='tight')
+
+    ############################## tSNR in a patch ROI
+
+    #slice_index = 10  # Adjust this to the desired slice index
+    #time_points_index = 1  # Index of the time dimension (4th dimension) in imgm_cla
+    
+    # Extract the 2D slice at the specified index from the 3D image data
+    slice_data = imgm_cla_nn[:, :, slice_index,:]
+    #slice_data_mtx = imgm_mtx_nn[:, :, slice_index,:]
+    print("Image data shape:", slice_data.shape)
+
+    # Calculate the coordinates of the ROI
+    x_end = x_start + roi_width
+    y_end = y_start + roi_height
+
+    # Create a Rectangle patch for the ROI on subplot axs[0]
+    roi_rect_0 = patches.Rectangle((x_start, y_start), roi_width, roi_height,
+                                   linewidth=1, edgecolor='y', linestyle='--', fill=False)
+
+    # Create a 1x2 grid of subplots
+    fig, axs = plt.subplots(1, 2, figsize=(8, 4))  # Adjust figsize as needed
+
+    # Plot imgm_cla
+    im_cla = axs[0].imshow(np.rot90(tsnr_obj_cla.tsnr_map[:, :, slice_index]), cmap='inferno', clim=(0, tsnrScale))
+    axs[0].set_title(f'tSNR 2D Slice ROI (slc {slice_index})')  # Set the plot title
+    axs[0].axis(False)  # Turn off axis labels and ticks
+
+    # Plot the same slice on the second subplot with the rectangle
+    im_gra = axs[1].imshow(np.rot90(tsnr_obj_cla.tsnr_map[:, :, slice_index]), cmap='gray')
+    axs[1].add_patch(roi_rect_0)
+    axs[1].set_title(f'Slice {slice_index} with ROI')  # Set the plot title
+    axs[1].axis(False)  # Turn off axis labels and ticks
+    
+    cb = fig.colorbar(im_cla, ax=axs[0],shrink=0.6) #, fraction=0.046, pad=0.04)
+    cb.set_label('Intensity')
+    cb2 = fig.colorbar(im_gra, ax=axs[1],shrink=0.6) #, fraction=0.046, pad=0.04)
+    #cb.set_label('Intensity')
+    #fig.colorbar(im, location='bottom')
+
+    # Adjust layout and display the plot
+    plt.tight_layout()
+    # plt.show()  # Disabled for script mode
+
+    output_filename = 'tSNR_w_ROI_images.png'
+    output_path = f"{output_dir}/{output_filename}"  # Construct the full output path
+    fig.savefig(output_path, dpi=300)  # Save the plot as a PNG file with 300 dpi resolution
+    plt.close()  # Close the plot to free up memory
+
+    ############################## signal and std over time
+
+    # Crop the selected ROI from the 2D slice data
+    roi_data = slice_data[y_start:y_end, x_start:x_end, :]
+
+    # Calculate the average signal intensity across the selected ROI over time
+    average_patch = np.mean(roi_data, axis=(0, 1))
+
+    # Calculate the standard deviation (STDev) of the signal intensity across the selected ROI over time
+    std_patch = np.std(roi_data, axis=(0, 1))
+
+    std_patch = detrend(std_patch)
+
+    # Detrend the average patch time series
+    detrended_patch = detrend(average_patch)
+
+    # Prepare the time points (x-axis) for the time series plot
+    time_points = np.arange(slice_data.shape[2])
+
+    #Plot the time series of the average patch
+    fig = plt.figure(figsize=(8, 4))  # Adjust figsize as needed
+    plt.plot(time_points, detrended_patch, color='blue', label='Average Patch')
+
+    #Plot the detrended time series of the average patch_mtx (second time series)
+    plt.plot(time_points, std_patch, color='red', label='stdev Patch')
+
+    #Set plot title and labels
+    plt.title(f"Time Series of patch (Slice {slice_index})")
+    plt.xlabel("Time (Index)")
+    plt.ylabel("Signal Intensity")
+    plt.legend()  # Show legend with labels for each time series
+    #plt.ylim(-400,400)
+    #Show the plot
+    plt.grid(True)  # Enable grid for better visualization
+    # plt.show()  # Disabled for script mode
+    output_filename = 'TS_images.png'
+    output_path = f"{output_dir}/{output_filename}"  # Construct the full output path
+    fig.savefig(output_path, dpi=300)  # Save the plot as a PNG file with 300 dpi resolution
+    plt.close()  # Close the plot to free up memory
+
+    tsnr_slice = tsnr_obj_cla.tsnr_map[:, :, slice_index]
+    tsnr_slice = np.rot90(tsnr_slice)  # Rotate the slice if needed
+    #print("Shape of tSNR slice:", tsnr_slice.shape)
+    tsnr_roi = tsnr_slice[y_start:y_start + roi_height, x_start:x_start + roi_width]
+    mean_tsnr_roi = np.mean(tsnr_roi)
+    print("Mean tSNR within ROI:", mean_tsnr_roi)
+
+    
+    ############################## STATIC spatial noise image
+
+    # Lastly, let's plot the static spatial noise images.
+
+    slice_data_odd = imgm_cla_nn[:, :, :,::2]
+    slice_data_even = imgm_cla_nn[:, :, :,1::2]
+
+    # Sum across the fourth dimension (time) to get the sum of odd and even slices
+    sum_odd = np.sum(slice_data_odd, axis=3)
+    sum_even = np.sum(slice_data_even, axis=3)
+
+    # Calculate the difference between sum of odd and even slices
+    static_spatial_noise = sum_odd - sum_even
+
+    # Apply thresholding to remove background noise
+    threshold_value = 0  # Adjust threshold value as needed
+    static_spatial_noise_thresholded = np.where(static_spatial_noise < threshold_value, 0, static_spatial_noise)
+
+    # Select a specific slice index (e.g., quickCrop(5) in MATLAB)
+    slice_index = 5  # Adjust as needed
+
+    # Plot the static spatial noise image
+    fig = plt.figure(figsize=(6, 4))  # Adjust figsize as needed
+    plt.imshow(static_spatial_noise[:, :, slice_index], cmap='viridis', aspect='equal')
+    plt.title(f"Static Spatial Noise Image, mean={int(np.round(np.mean(static_spatial_noise)))}")
+    plt.colorbar(label='Intensity')
+
+    # Set colorbar limits (clim) if desired
+    #plt.clim(-100, 100)
+
+    # Show the plot
+    # plt.show()  # Disabled for script mode
+    output_filename = 'SSN.png'
+    output_path = f"{output_dir}/{output_filename}"  # Construct the full output path
+    fig.savefig(output_path, dpi=300)  # Save the plot as a PNG file with 300 dpi resolution
+    plt.close()  # Close the plot to free up memory
+    print("Mean SSN:", np.mean(static_spatial_noise))
+
+    ############################## QA SUMMARY TABLE ##############################
+    
+    # Create comprehensive summary table with all important metrics
+    print("\n" + "="*80)
+    print("QA ANALYSIS SUMMARY")
+    print("="*80)
+    
+    # Collect all the metrics that were calculated during analysis
+    summary_metrics = {
+        'File Information': {
+            'Core filename': core_filename,
+            'Output directory': output_dir,
+            'Slice index': slice_index,
+            'Image dimensions': f"{imgm_cla.shape[0]} × {imgm_cla.shape[1]} × {imgm_cla.shape[2]}",
+            'Time points': imgm_cla.shape[3],
+            'Time points (processed)': slice_data.shape[2]  # After removing noise volume
+        },
+        'Acquisition Parameters': {
+            'TR (repetition time)': f"{TR:.2f}s",
+            'TR source': 'JSON metadata' if nifti_path and get_tr_from_json(nifti_path) else 'Default value',
+            'Ernst scaling factor': f"{ErnstScaling:.4f}"
+        },
+        'Signal Quality Metrics': {
+            'Mean volume std': f"{mean_std:.2f}",
+            'Image iSNR': f"{np.mean(isnr_obj_cla.isnr):.2f}",
+            'Noise value (iSNR)': f"{np.mean(isnr_obj_cla.noise):.2f}",
+            'Mean tSNR': f"{my_mean_tsnr:.2f}",
+            'Mean tSNR per unit time': f"{mean_tsnr_unit_time:.2f}",
+            'Mean tSNR within ROI': f"{mean_tsnr_roi:.2f}",
+            'Mean Static Spatial Noise': f"{np.mean(static_spatial_noise):.2f}"
+        },
+        'ROI Parameters': {
+            'ROI position (x, y)': f"({x_start}, {y_start})",
+            'ROI size (width × height)': f"{roi_width} × {roi_height}",
+            'ROI slice': slice_index
+        }
+    }
+    
+    # Print formatted summary to console
+    for category, metrics in summary_metrics.items():
+        print(f"\n{category}:")
+        print("-" * len(category))
+        for key, value in metrics.items():
+            print(f"  {key:<25}: {value}")
+    
+    print("\n" + "="*80)
+    
+    # Save summary to text file
+    summary_filename = 'QA_Summary.txt'
+    summary_path = f"{output_dir}/{summary_filename}"
+    
+    with open(summary_path, 'w') as f:
+        f.write("QA ANALYSIS SUMMARY REPORT\n")
+        f.write("="*80 + "\n")
+        f.write(f"Generated: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n\n")
+        
+        for category, metrics in summary_metrics.items():
+            f.write(f"{category}:\n")
+            f.write("-" * len(category) + "\n")
+            for key, value in metrics.items():
+                f.write(f"  {key:<25}: {value}\n")
+            f.write("\n")
+        
+        f.write("="*80 + "\n")
+        f.write("End of QA Analysis Summary\n")
+    
+    print(f"Summary saved to: {summary_path}")
+
+    # Create a CSV summary for easy import into other tools
+    csv_filename = 'QA_Summary.csv'
+    csv_path = f"{output_dir}/{csv_filename}"
+    
+    import csv
+    with open(csv_path, 'w', newline='') as csvfile:
+        writer = csv.writer(csvfile)
+        writer.writerow(['Category', 'Metric', 'Value'])
+        
+        for category, metrics in summary_metrics.items():
+            for key, value in metrics.items():
+                writer.writerow([category, key, value])
+    
+    print(f"CSV summary saved to: {csv_path}")
+
+    ############################## POWERPOINT GENERATION ##############################
+    
+    if PPTX_AVAILABLE:
+        try:
+            # Create PowerPoint presentation
+            prs = Presentation()
+            
+            # Slide 1: Title Slide
+            slide_layout = prs.slide_layouts[0]  # Title slide layout
+            slide = prs.slides.add_slide(slide_layout)
+            title = slide.shapes.title
+            subtitle = slide.placeholders[1]
+            
+            title.text = "fMRI Quality Assurance Report"
+            subtitle.text = f"Subject: {extract_subject_number(core_filename)}\nFile: {core_filename}\nGenerated: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}"
+            
+            # Slide 2: Summary Metrics
+            slide_layout = prs.slide_layouts[1]  # Title and content layout
+            slide = prs.slides.add_slide(slide_layout)
+            title = slide.shapes.title
+            title.text = "QA Summary Metrics"
+            
+            # Add text box with summary metrics
+            left = Inches(1)
+            top = Inches(1.5)
+            width = Inches(8)
+            height = Inches(5)
+            textbox = slide.shapes.add_textbox(left, top, width, height)
+            text_frame = textbox.text_frame
+            
+            # Add key metrics to slide
+            key_metrics = [
+                f"Image Dimensions: {imgm_cla.shape[0]} × {imgm_cla.shape[1]} × {imgm_cla.shape[2]}",
+                f"Time Points: {imgm_cla.shape[3]} (processed: {slice_data.shape[2]})",
+                f"TR: {TR:.2f}s (from {summary_metrics['Acquisition Parameters']['TR source']})",
+                f"Mean tSNR: {my_mean_tsnr:.2f}",
+                f"Mean tSNR per unit time: {mean_tsnr_unit_time:.2f}",
+                f"Image iSNR: {np.mean(isnr_obj_cla.isnr):.2f}",
+                f"Mean tSNR within ROI: {mean_tsnr_roi:.2f}",
+                f"Static Spatial Noise: {np.mean(static_spatial_noise):.2f}"
+            ]
+            
+            for i, metric in enumerate(key_metrics):
+                p = text_frame.paragraphs[0] if i == 0 else text_frame.add_paragraph()
+                p.text = metric
+                p.font.size = Pt(14)
+            
+            # Slide 3: Mean Image
+            slide_layout = prs.slide_layouts[6]  # Blank layout
+            slide = prs.slides.add_slide(slide_layout)
+            
+            # Add title
+            left = Inches(1)
+            top = Inches(0.5)
+            width = Inches(8)
+            height = Inches(1)
+            title_box = slide.shapes.add_textbox(left, top, width, height)
+            title_frame = title_box.text_frame
+            title_p = title_frame.paragraphs[0]
+            title_p.text = f"Mean Image (Slice {slice_index})"
+            title_p.font.size = Pt(24)
+            title_p.font.bold = True
+            
+            # Add mean image
+            mean_img_path = f"{output_dir}/Mean_image.png"
+            if os.path.exists(mean_img_path):
+                left = Inches(1.5)
+                top = Inches(1.5)
+                slide.shapes.add_picture(mean_img_path, left, top, width=Inches(6))
+            
+            # Slide 4: Mean Montage
+            slide_layout = prs.slide_layouts[6]  # Blank layout
+            slide = prs.slides.add_slide(slide_layout)
+            
+            # Add title
+            title_box = slide.shapes.add_textbox(Inches(1), Inches(0.5), Inches(8), Inches(1))
+            title_frame = title_box.text_frame
+            title_p = title_frame.paragraphs[0]
+            title_p.text = "Mean Image Montage (All Slices)"
+            title_p.font.size = Pt(20)
+            title_p.font.bold = True
+            
+            # Add montage
+            montage_path = f"{output_dir}/mean_montage.png"
+            if os.path.exists(montage_path):
+                slide.shapes.add_picture(montage_path, Inches(0.5), Inches(1.5), width=Inches(8.5))
+            
+            # Slide 5: iSNR Maps
+            slide_layout = prs.slide_layouts[6]
+            slide = prs.slides.add_slide(slide_layout)
+            
+            title_box = slide.shapes.add_textbox(Inches(1), Inches(0.3), Inches(8), Inches(0.8))
+            title_frame = title_box.text_frame
+            title_p = title_frame.paragraphs[0]
+            title_p.text = f"iSNR Maps - Mean iSNR: {np.mean(isnr_obj_cla.isnr):.2f}"
+            title_p.font.size = Pt(18)
+            title_p.font.bold = True
+            
+            # Add iSNR sagittal and coronal images side by side
+            isnr_sag_path = f"{output_dir}/iSNR_sag.png"
+            isnr_cor_path = f"{output_dir}/iSNR_cor.png"
+            
+            if os.path.exists(isnr_sag_path):
+                slide.shapes.add_picture(isnr_sag_path, Inches(0.5), Inches(1.2), width=Inches(4))
+            if os.path.exists(isnr_cor_path):
+                slide.shapes.add_picture(isnr_cor_path, Inches(5), Inches(1.2), width=Inches(4))
+            
+            # Slide 6: tSNR Maps
+            slide_layout = prs.slide_layouts[6]
+            slide = prs.slides.add_slide(slide_layout)
+            
+            title_box = slide.shapes.add_textbox(Inches(1), Inches(0.3), Inches(8), Inches(0.8))
+            title_frame = title_box.text_frame
+            title_p = title_frame.paragraphs[0]
+            title_p.text = f"tSNR Maps - Mean tSNR: {my_mean_tsnr:.2f}"
+            title_p.font.size = Pt(18)
+            title_p.font.bold = True
+            
+            # Add tSNR sagittal and coronal images
+            tsnr_sag_path = f"{output_dir}/tSNR_sag.png"
+            tsnr_cor_path = f"{output_dir}/tSNR_cor.png"
+            
+            if os.path.exists(tsnr_sag_path):
+                slide.shapes.add_picture(tsnr_sag_path, Inches(0.5), Inches(1.2), width=Inches(4))
+            if os.path.exists(tsnr_cor_path):
+                slide.shapes.add_picture(tsnr_cor_path, Inches(5), Inches(1.2), width=Inches(4))
+            
+            # Slide 7: tSNR Montage
+            slide_layout = prs.slide_layouts[6]
+            slide = prs.slides.add_slide(slide_layout)
+            
+            title_box = slide.shapes.add_textbox(Inches(1), Inches(0.3), Inches(8), Inches(0.8))
+            title_frame = title_box.text_frame
+            title_p = title_frame.paragraphs[0]
+            title_p.text = "tSNR Montage (All Slices)"
+            title_p.font.size = Pt(20)
+            title_p.font.bold = True
+            
+            tsnr_montage_path = f"{output_dir}/tSNR_montage.png"
+            if os.path.exists(tsnr_montage_path):
+                slide.shapes.add_picture(tsnr_montage_path, Inches(0.5), Inches(1.2), width=Inches(8.5))
+            
+            # Slide 8: ROI Analysis
+            slide_layout = prs.slide_layouts[6]
+            slide = prs.slides.add_slide(slide_layout)
+            
+            title_box = slide.shapes.add_textbox(Inches(1), Inches(0.3), Inches(8), Inches(0.8))
+            title_frame = title_box.text_frame
+            title_p = title_frame.paragraphs[0]
+            title_p.text = f"ROI Analysis - tSNR in ROI: {mean_tsnr_roi:.2f}"
+            title_p.font.size = Pt(18)
+            title_p.font.bold = True
+            
+            # Add ROI images and time series
+            roi_path = f"{output_dir}/tSNR_w_ROI_images.png"
+            ts_path = f"{output_dir}/TS_images.png"
+            
+            if os.path.exists(roi_path):
+                slide.shapes.add_picture(roi_path, Inches(0.5), Inches(1.2), width=Inches(8.5))
+            
+            if os.path.exists(ts_path):
+                # Add time series on next slide
+                slide_layout = prs.slide_layouts[6]
+                slide = prs.slides.add_slide(slide_layout)
+                
+                title_box = slide.shapes.add_textbox(Inches(1), Inches(0.3), Inches(8), Inches(0.8))
+                title_frame = title_box.text_frame
+                title_p = title_frame.paragraphs[0]
+                title_p.text = f"Time Series Analysis (Slice {slice_index})"
+                title_p.font.size = Pt(18)
+                title_p.font.bold = True
+                
+                slide.shapes.add_picture(ts_path, Inches(0.5), Inches(1.2), width=Inches(8.5))
+            
+            # Slide 9: Noise Analysis
+            slide_layout = prs.slide_layouts[6]
+            slide = prs.slides.add_slide(slide_layout)
+            
+            title_box = slide.shapes.add_textbox(Inches(1), Inches(0.3), Inches(8), Inches(0.8))
+            title_frame = title_box.text_frame
+            title_p = title_frame.paragraphs[0]
+            title_p.text = f"Noise Analysis - SSN: {np.mean(static_spatial_noise):.2f}"
+            title_p.font.size = Pt(18)
+            title_p.font.bold = True
+            
+            # Add noise images
+            noise_path = f"{output_dir}/masked_noise.png"
+            ssn_path = f"{output_dir}/SSN.png"
+            
+            if os.path.exists(noise_path):
+                slide.shapes.add_picture(noise_path, Inches(0.5), Inches(1.2), width=Inches(8.5))
+            
+            if os.path.exists(ssn_path):
+                slide.shapes.add_picture(ssn_path, Inches(0.5), Inches(5), width=Inches(4))
+            
+            # Slide 10: Ernst Scaled tSNR per Unit Time
+            slide_layout = prs.slide_layouts[6]
+            slide = prs.slides.add_slide(slide_layout)
+            
+            title_box = slide.shapes.add_textbox(Inches(1), Inches(0.3), Inches(8), Inches(0.8))
+            title_frame = title_box.text_frame
+            title_p = title_frame.paragraphs[0]
+            title_p.text = f"Ernst Scaled tSNR per Unit Time - Mean: {mean_tsnr_unit_time:.2f} (TR={TR:.2f}s, Ernst Factor={ErnstScaling:.4f})"
+            title_p.font.size = Pt(16)
+            title_p.font.bold = True
+            
+            # Add Ernst scaled tSNR images
+            tsnr_unit_time_path = f"{output_dir}/tSNR_per_unit_time.png"
+            tsnr_raw_path = f"{output_dir}/tSNR_raw.png"
+            
+            if os.path.exists(tsnr_unit_time_path):
+                slide.shapes.add_picture(tsnr_unit_time_path, Inches(0.5), Inches(1.2), width=Inches(4))
+            
+            if os.path.exists(tsnr_raw_path):
+                slide.shapes.add_picture(tsnr_raw_path, Inches(5), Inches(1.2), width=Inches(4))
+            
+            # Add explanatory text
+            left = Inches(1)
+            top = Inches(5.5)
+            width = Inches(8)
+            height = Inches(1.5)
+            textbox = slide.shapes.add_textbox(left, top, width, height)
+            text_frame = textbox.text_frame
+            
+            explanation_text = [
+                f"Ernst angle correction applied for TR = {TR:.2f}s",
+                f"Scaling factor = {ErnstScaling:.4f} (accounts for T1 relaxation effects)",
+                f"Left: tSNR per unit time (Ernst corrected), Right: Raw tSNR"
+            ]
+            
+            for i, text in enumerate(explanation_text):
+                p = text_frame.paragraphs[0] if i == 0 else text_frame.add_paragraph()
+                p.text = text
+                p.font.size = Pt(12)
+            
+            # Save PowerPoint
+            pptx_filename = 'QA_Report.pptx'
+            pptx_path = f"{output_dir}/{pptx_filename}"
+            prs.save(pptx_path)
+            
+            print(f"PowerPoint report saved to: {pptx_path}")
+            
+        except Exception as e:
+            print(f"Error creating PowerPoint: {e}")
+            print("PowerPoint generation failed, but analysis completed successfully.")
+    else:
+        print("PowerPoint generation skipped (python-pptx not available)")
+
+    # The End
+
+def run_qa_single_path(mypathname, pathname_m, extension, filename_pattern, output_base_dir=None, output_pattern=None):
+    """
+    Run QA analysis for a single path configuration
+    This function contains the main processing logic that was previously in __main__
+    """
+    core_filenames = set(
+        os.path.splitext(os.path.splitext(os.path.basename(file_path))[0])[0]  # Handle double extensions
+        for file_path in glob(os.path.join(pathname_m, filename_pattern + extension))
+    )
+
+    print("Files found:", glob(os.path.join(pathname_m, filename_pattern + extension)))
+    print("Core filenames:", core_filenames)
+    print("Now beginning loop")
+     
+    # Loop over each core filename found
+    for core_filename in core_filenames:
+
+        print(f"{core_filename}")
+
+        # Create an output directory for saving plots
+        # output_directory = mypathname + 'qa_output_' + core_filename  # Original version
+        subject_number = extract_subject_number(core_filename)
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        
+        # Use provided output_base_dir or default location
+        if output_base_dir is None:
+            output_base_dir = '/Users/cmilbourn/Documents/Sweet_Data/Development_Data/QA_output/'
+        
+        # Use output pattern if provided
+        if output_pattern is None:
+            output_pattern = '{subject}_qa_output_{core_filename}_{timestamp}'
+        
+        # Format the output directory name using the pattern
+        output_dir_name = output_pattern.format(
+            subject=subject_number,
+            core_filename=core_filename,
+            timestamp=timestamp,
+            date=datetime.now().strftime("%Y%m%d"),
+            time=datetime.now().strftime("%H%M%S")
+        )
+        
+        output_directory = os.path.join(output_base_dir, output_dir_name)
+        os.makedirs(output_directory, exist_ok=True)
+        OUTPUT_DIR = os.path.abspath(output_directory)
+
+        print(f"{OUTPUT_DIR}")
+
+        # Create a dictionary to store loaded data for each core filename
+        file_data = {}
+
+        # Find the corresponding magnitude (.nii) and phase (_ph.nii) files for the current core filename
+        mag_file_path = os.path.join(pathname_m, core_filename + extension)
+        print(mag_file_path)
+        # Load magnitude data only
+        print('Loading just mag')
+        imgm_cla, imgm_cla_affine = load_data(mag_file_path)
+        #imgp_cla, imgp_cla_affine = load_data(phase_file_path)
+
+        print(mag_file_path)
+        #print(phase_file_path)
+
+        # MASK
+        mask_path = find_mask_file(pathname_m)
+        if mask_path:
+            print(f"Found mask: {mask_path}")
+            mask_data, mask_affine = load_data(mask_path)
+        else:
+            print("No mask file found.")
+            mask_data = None
+        
+        # Store loaded data in the dictionary with the core filename as the key
+        file_data[core_filename] = (imgm_cla)
+
+        # Process and plot data
+        #process_data_nophase(imgm_cla, imgm_cla_affine, core_filename, OUTPUT_DIR)
+        process_data_nophase(imgm_cla, imgm_cla_affine, core_filename, OUTPUT_DIR, mask_data, nifti_path=mag_file_path)
+
+# Dataset Configuration Classes
+class DatasetConfig:
+    """Base class for dataset configurations"""
+    def __init__(self, name, description, data_path, func_subdir, extension, filename_pattern, output_base_dir):
+        self.name = name
+        self.description = description
+        self.data_path = data_path
+        self.func_subdir = func_subdir  # subdirectory containing functional data
+        self.extension = extension
+        self.filename_pattern = filename_pattern
+        self.output_base_dir = output_base_dir
+    
+    def get_func_path(self):
+        """Get full path to functional data directory"""
+        return os.path.join(self.data_path, self.func_subdir)
+
+# Predefined dataset configurations
+DATASET_CONFIGS = {
+    'bids_sweet': DatasetConfig(
+        name='BIDS Sweet Phase 3',
+        description='BIDS-formatted Sweet Phase 3 data',
+        data_path='/Users/cmilbourn/Documents/Sweet_Data/Development_Data/Sweet_Data_BIDS_Dev/sub001/sub001-visit001/',
+        func_subdir='func/',
+        extension='.nii.gz',
+        filename_pattern='*task-rest-bold',
+        output_base_dir='/Users/cmilbourn/Documents/Sweet_Data/Development_Data/QA_output/'
+    ),
+    'bids_generic': DatasetConfig(
+        name='BIDS Generic',
+        description='Generic BIDS-formatted dataset',
+        data_path='',  # To be specified by user
+        func_subdir='func/',
+        extension='.nii.gz',
+        filename_pattern='*bold',
+        output_base_dir=''  # To be specified by user
+    ),
+    'legacy_digitmap': DatasetConfig(
+        name='Legacy Digitmap',
+        description='Legacy digitmap format data',
+        data_path='',  # To be specified by user
+        func_subdir='magnitude/',
+        extension='.nii',
+        filename_pattern='digitmap*',
+        output_base_dir=''  # To be specified by user
+    ),
+    'custom': DatasetConfig(
+        name='Custom',
+        description='Custom dataset configuration',
+        data_path='',
+        func_subdir='',
+        extension='',
+        filename_pattern='',
+        output_base_dir=''
+    )
+}
+
+def setup_argparser():
+    """Setup command line argument parser"""
+    parser = argparse.ArgumentParser(
+        description='Flexible fMRI QA Analysis Tool',
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        epilog="""
+Dataset Configuration Examples:
+-----------------------------
+
+1. BIDS Sweet Phase 3 (predefined):
+   python qa_run_nophase_V2_wrapper.py --config bids_sweet
+
+2. Custom BIDS dataset:
+   python qa_run_nophase_V2_wrapper.py --config bids_generic \\
+     --data-path /path/to/bids/subject/session/ \\
+     --output-dir /path/to/output/
+
+3. Legacy digitmap format:
+   python qa_run_nophase_V2_wrapper.py --config legacy_digitmap \\
+     --data-path /path/to/data/ \\
+     --output-dir /path/to/output/
+
+4. Fully custom configuration:
+   python qa_run_nophase_V2_wrapper.py --config custom \\
+     --data-path /path/to/data/ \\
+     --func-subdir func/ \\
+     --extension .nii.gz \\
+     --pattern "*task-rest-bold" \\
+     --output-dir /path/to/output/
+
+5. Override specific parameters:
+   python qa_run_nophase_V2_wrapper.py --config bids_sweet \\
+     --pattern "*task-motor-bold" \\
+     --output-dir /custom/output/path/
+        """)
+    
+    # Configuration options
+    parser.add_argument('--config', '-c', 
+                       choices=list(DATASET_CONFIGS.keys()),
+                       default='bids_sweet',
+                       help='Predefined dataset configuration to use')
+    
+    parser.add_argument('--config-file', '-f',
+                       help='JSON configuration file to load dataset parameters from')
+    
+    parser.add_argument('--list-configs', action='store_true',
+                       help='List available predefined configurations')
+    
+    parser.add_argument('--save-config',
+                       help='Save current configuration to JSON file')
+    
+    # Path arguments
+    parser.add_argument('--data-path', '-d',
+                       help='Base path to dataset (overrides config default)')
+    
+    parser.add_argument('--func-subdir', '-s',
+                       help='Subdirectory containing functional data (overrides config default)')
+    
+    parser.add_argument('--output-dir', '-o',
+                       help='Output directory base path (overrides config default)')
+    
+    parser.add_argument('--output-pattern',
+                       default='{subject}_qa_output_{core_filename}_{timestamp}',
+                       help='Output directory naming pattern (default: {subject}_qa_output_{core_filename}_{timestamp})')
+    
+    # File pattern arguments
+    parser.add_argument('--extension', '-e',
+                       help='File extension (e.g., .nii.gz, .nii) (overrides config default)')
+    
+    parser.add_argument('--pattern', '-p',
+                       help='Filename pattern (e.g., *task-rest-bold) (overrides config default)')
+    
+    # Processing options
+    parser.add_argument('--dry-run', action='store_true',
+                       help='Show what would be processed without running analysis')
+    
+    parser.add_argument('--verbose', '-v', action='store_true',
+                       help='Enable verbose output')
+    
+    parser.add_argument('--create-example-config', 
+                       help='Create an example configuration file with the specified name')
+    
+    return parser
+
+def list_available_configs():
+    """List all available dataset configurations"""
+    print("\nAvailable Dataset Configurations:")
+    print("=" * 50)
+    for key, config in DATASET_CONFIGS.items():
+        print(f"\n{key}:")
+        print(f"  Name: {config.name}")
+        print(f"  Description: {config.description}")
+        print(f"  Functional subdir: {config.func_subdir}")
+        print(f"  File extension: {config.extension}")
+        print(f"  Filename pattern: {config.filename_pattern}")
+
+def load_config_from_file(config_file_path):
+    """Load configuration from JSON file"""
+    try:
+        with open(config_file_path, 'r') as f:
+            config_dict = json.load(f)
+        
+        config = DatasetConfig(
+            name=config_dict.get('name', 'Custom from file'),
+            description=config_dict.get('description', 'Loaded from configuration file'),
+            data_path=config_dict.get('data_path', ''),
+            func_subdir=config_dict.get('func_subdir', ''),
+            extension=config_dict.get('extension', ''),
+            filename_pattern=config_dict.get('filename_pattern', ''),
+            output_base_dir=config_dict.get('output_base_dir', '')
+        )
+        return config
+        
+    except FileNotFoundError:
+        raise ValueError(f"Configuration file not found: {config_file_path}")
+    except json.JSONDecodeError as e:
+        raise ValueError(f"Invalid JSON in configuration file: {e}")
+
+def save_config_to_file(config, config_file_path):
+    """Save configuration to JSON file"""
+    config_dict = {
+        'name': config.name,
+        'description': config.description,
+        'data_path': config.data_path,
+        'func_subdir': config.func_subdir,
+        'extension': config.extension,
+        'filename_pattern': config.filename_pattern,
+        'output_base_dir': config.output_base_dir
+    }
+    
+    try:
+        with open(config_file_path, 'w') as f:
+            json.dump(config_dict, f, indent=2)
+        print(f"Configuration saved to: {config_file_path}")
+    except Exception as e:
+        raise ValueError(f"Failed to save configuration file: {e}")
+
+def create_example_config(config_file_path):
+    """Create an example configuration file with comments"""
+    example_config = {
+        "_comment1": "QA Analysis Configuration File",
+        "_comment2": "Modify the paths and patterns below to match your dataset",
+        "name": "My Custom Dataset",
+        "description": "Custom dataset configuration for QA analysis",
+        "_comment3": "Base path to your dataset (e.g., BIDS subject/session directory)",
+        "data_path": "/path/to/your/dataset/sub001/ses001/",
+        "_comment4": "Subdirectory containing functional data relative to data_path",
+        "func_subdir": "func/",
+        "_comment5": "File extension for your NIfTI files",
+        "extension": ".nii.gz",
+        "_comment6": "Pattern to match functional files (without extension)",
+        "filename_pattern": "*task-rest-bold",
+        "_comment7": "Base directory where QA output will be saved",
+        "output_base_dir": "/path/to/qa/output/"
+    }
+    
+    try:
+        with open(config_file_path, 'w') as f:
+            json.dump(example_config, f, indent=2)
+        print(f"Example configuration created: {config_file_path}")
+        print("Edit this file with your dataset paths and then run:")
+        print(f"python qa_run_nophase_V2_wrapper.py --config-file {config_file_path}")
+    except Exception as e:
+        raise ValueError(f"Failed to create example configuration file: {e}")
+
+def validate_config(config, args):
+    """Validate and complete configuration with user arguments"""
+    # Apply user overrides
+    if args.data_path:
+        config.data_path = args.data_path
+    if args.func_subdir:
+        config.func_subdir = args.func_subdir
+    if args.output_dir:
+        config.output_base_dir = args.output_dir
+    if args.extension:
+        config.extension = args.extension
+    if args.pattern:
+        config.filename_pattern = args.pattern
+    
+    # Validate required paths
+    if not config.data_path:
+        raise ValueError("Data path must be specified (use --data-path or select config with default path)")
+    
+    if not config.output_base_dir:
+        raise ValueError("Output directory must be specified (use --output-dir or select config with default path)")
+    
+    if not os.path.exists(config.data_path):
+        raise ValueError(f"Data path does not exist: {config.data_path}")
+    
+    func_path = config.get_func_path()
+    if not os.path.exists(func_path):
+        raise ValueError(f"Functional data directory does not exist: {func_path}")
+    
+    # Create output directory if it doesn't exist
+    os.makedirs(config.output_base_dir, exist_ok=True)
+    
+    return config
+
+def print_config_summary(config, verbose=False):
+    """Print summary of current configuration"""
+    print(f"\nQA Analysis Configuration: {config.name}")
+    print("=" * 50)
+    print(f"Data path: {config.data_path}")
+    print(f"Functional data: {config.get_func_path()}")
+    print(f"Output directory: {config.output_base_dir}")
+    print(f"File pattern: {config.filename_pattern}{config.extension}")
+    
+    if verbose:
+        print(f"Description: {config.description}")
+        print(f"Functional subdirectory: {config.func_subdir}")
+        print(f"File extension: {config.extension}")
+
+def run_qa_with_config(config, dry_run=False, verbose=False, output_pattern=None):
+    """Run QA analysis with the specified configuration"""
+    
+    print_config_summary(config, verbose)
+    
+    # Find matching files
+    func_path = config.get_func_path()
+    file_pattern = os.path.join(func_path, config.filename_pattern + config.extension)
+    matching_files = glob(file_pattern)
+    
+    if not matching_files:
+        print(f"\nNo files found matching pattern: {file_pattern}")
+        return
+    
+    print(f"\nFound {len(matching_files)} file(s) to process:")
+    for file_path in matching_files:
+        print(f"  - {os.path.basename(file_path)}")
+    
+    if dry_run:
+        print(f"\nDry run mode - analysis would be performed but no files would be generated.")
+        return
+    
+    # Run the actual QA analysis
+    print(f"\nStarting QA analysis...")
+    run_qa_single_path(config.data_path, func_path, config.extension, config.filename_pattern, config.output_base_dir, output_pattern)
+
+if __name__ == "__main__":
+    # Setup argument parser
+    parser = setup_argparser()
+    args = parser.parse_args()
+    
+    # Handle special commands
+    if args.list_configs:
+        list_available_configs()
+        exit(0)
+    
+    if args.create_example_config:
+        create_example_config(args.create_example_config)
+        exit(0)
+    
+    try:
+        # Get base configuration
+        if args.config_file:
+            # Load configuration from file
+            config = load_config_from_file(args.config_file)
+        else:
+            # Use predefined configuration
+            config = DATASET_CONFIGS[args.config]
+            # Create a copy to avoid modifying the original
+            import copy
+            config = copy.deepcopy(config)
+        
+        # Validate and apply user overrides
+        config = validate_config(config, args)
+        
+        # Save configuration if requested
+        if args.save_config:
+            save_config_to_file(config, args.save_config)
+        
+        # Run QA analysis with the configuration
+        run_qa_with_config(config, dry_run=args.dry_run, verbose=args.verbose, output_pattern=args.output_pattern)
+        
+    except Exception as e:
+        print(f"Error: {e}")
+        print("\nFor help with configuration options, run:")
+        print("python qa_run_nophase_V2_wrapper.py --help")
+        print("python qa_run_nophase_V2_wrapper.py --list-configs")
+        exit(1)
