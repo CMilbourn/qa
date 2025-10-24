@@ -167,6 +167,10 @@ def process_data_nophase(imgm_cla, imgm_affine, core_filename, output_dir, mask_
     # tSNR images saved as nii.gz
     # Lots of PNG images of every plot
 
+    # Create a single timestamp string to use consistently throughout the analysis
+    timestamp_str = datetime.now().strftime("%Y%m%d_%H%M%S")
+    print(f"Analysis timestamp: {timestamp_str}")
+
     ############################## Plotting mean images
     # Set slice (3d) and time (4d)
     #slice_index = round(imgm_cla.shape[2] * 2 / 3)
@@ -204,7 +208,6 @@ def process_data_nophase(imgm_cla, imgm_affine, core_filename, output_dir, mask_
     # # plt.show()  # Disabled for script mode  # Disabled for script mode
 
     # Assuming you have created a plot `plt` and want to save it as a PNG file
-    timestamp_str = datetime.now().strftime("%Y%m%d_%H%M%S")
     output_filename = f'Mean_image_ASL_{timestamp_str}.png'
     output_path = f"{output_dir}/{output_filename}"  # Construct the full output path
     fig.savefig(output_path, dpi=300)  # Save the plot as a PNG file with 300 dpi resolution
@@ -309,7 +312,6 @@ def process_data_nophase(imgm_cla, imgm_affine, core_filename, output_dir, mask_
     
     
     isnr_obj_cla = snr.Isnr(imgm_cla, imgm_affine, noise_mask=masked_noise)
-    timestamp_str = datetime.now().strftime("%Y%m%d_%H%M%S")
     isnr_obj_cla.to_nifti(output_dir, f'isnr_ASL_{timestamp_str}')
     print(f'Image has an iSNR of {np.mean(isnr_obj_cla.isnr):.2f}.')
     print(f'Noise value used for iSNR: {np.mean(isnr_obj_cla.noise):.2f}')
@@ -439,7 +441,7 @@ def process_data_nophase(imgm_cla, imgm_affine, core_filename, output_dir, mask_
         cb.set_label('tSNR')
         plt.tight_layout()
         # plt.show()  # Disabled for script mode
-        fig.savefig(os.path.join(output_dir, "tSNR_masked_slice.png"), dpi=300)
+        fig.savefig(os.path.join(output_dir, f"tSNR_masked_slice_ASL_{timestamp_str}.png"), dpi=300)
         plt.close()
         
         # 3D plot
@@ -454,7 +456,7 @@ def process_data_nophase(imgm_cla, imgm_affine, core_filename, output_dir, mask_
         ax.set_ylabel('Y')
         ax.set_zlabel('Z')
         plt.tight_layout()
-        plt.savefig(os.path.join(output_dir, "tSNR_masked_3D.png"), dpi=300)
+        plt.savefig(os.path.join(output_dir, f"tSNR_masked_3D_ASL_{timestamp_str}.png"), dpi=300)
         plt.close()
 
     # tSNR SAG
@@ -469,7 +471,7 @@ def process_data_nophase(imgm_cla, imgm_affine, core_filename, output_dir, mask_
     # Adjust layout and display the plot
     plt.tight_layout()
     # plt.show()  # Disabled for script mode
-    output_filename = 'tSNR_sag.png'
+    output_filename = f'tSNR_sag_ASL_{timestamp_str}.png'
     output_path = f"{output_dir}/{output_filename}"  # Construct the full output path
     fig.savefig(output_path, dpi=300)  # Save the plot as a PNG file with 300 dpi resolution
     plt.close()  # Close the plot to free up memory
@@ -486,7 +488,7 @@ def process_data_nophase(imgm_cla, imgm_affine, core_filename, output_dir, mask_
     # Adjust layout and display the plot
     plt.tight_layout()
     # plt.show()  # Disabled for script mode
-    output_filename = 'tSNR_cor.png'
+    output_filename = f'tSNR_cor_ASL_{timestamp_str}.png'
     output_path = f"{output_dir}/{output_filename}"  # Construct the full output path
     fig.savefig(output_path, dpi=300)  # Save the plot as a PNG file with 300 dpi resolution
     plt.close()  # Close the plot to free up memory
@@ -539,7 +541,7 @@ def process_data_nophase(imgm_cla, imgm_affine, core_filename, output_dir, mask_
     
     fig_ut.tight_layout()
     # plt.show()  # Disabled for script mode
-    fig_ut.savefig(f"{output_dir}/tSNR_per_unit_time.png", dpi=300)
+    fig_ut.savefig(f"{output_dir}/tSNR_per_unit_time_ASL_{timestamp_str}.png", dpi=300)
     plt.close(fig_ut)
 
     # Plot and save raw tSNR image
@@ -551,7 +553,7 @@ def process_data_nophase(imgm_cla, imgm_affine, core_filename, output_dir, mask_
     cb_raw.set_label('tSNR')
     fig_raw.tight_layout()
     # plt.show()  # Disabled for script mode
-    fig_raw.savefig(f"{output_dir}/tSNR_raw.png", dpi=300)
+    fig_raw.savefig(f"{output_dir}/tSNR_raw_ASL_{timestamp_str}.png", dpi=300)
     plt.close(fig_raw)
 
     ##############################
@@ -577,7 +579,7 @@ def process_data_nophase(imgm_cla, imgm_affine, core_filename, output_dir, mask_
     fig.tight_layout(pad=0.3)
     
     # Save output
-    output_filename = 'tSNR_montage.png'
+    output_filename = f'tSNR_montage_ASL_{timestamp_str}.png'
     output_path = f"{output_dir}/{output_filename}"
     plt.savefig(output_path, dpi=300, bbox_inches='tight')
 
@@ -623,7 +625,7 @@ def process_data_nophase(imgm_cla, imgm_affine, core_filename, output_dir, mask_
     plt.tight_layout()
     # plt.show()  # Disabled for script mode
 
-    output_filename = 'tSNR_w_ROI_images.png'
+    output_filename = f'tSNR_w_ROI_images_ASL_{timestamp_str}.png'
     output_path = f"{output_dir}/{output_filename}"  # Construct the full output path
     fig.savefig(output_path, dpi=300)  # Save the plot as a PNG file with 300 dpi resolution
     plt.close()  # Close the plot to free up memory
@@ -663,7 +665,7 @@ def process_data_nophase(imgm_cla, imgm_affine, core_filename, output_dir, mask_
     #Show the plot
     plt.grid(True)  # Enable grid for better visualization
     # plt.show()  # Disabled for script mode
-    output_filename = 'TS_images.png'
+    output_filename = f'TS_images_ASL_{timestamp_str}.png'
     output_path = f"{output_dir}/{output_filename}"  # Construct the full output path
     fig.savefig(output_path, dpi=300)  # Save the plot as a PNG file with 300 dpi resolution
     plt.close()  # Close the plot to free up memory
@@ -708,7 +710,7 @@ def process_data_nophase(imgm_cla, imgm_affine, core_filename, output_dir, mask_
 
     # Show the plot
     # plt.show()  # Disabled for script mode
-    output_filename = 'SSN.png'
+    output_filename = f'SSN_ASL_{timestamp_str}.png'
     output_path = f"{output_dir}/{output_filename}"  # Construct the full output path
     fig.savefig(output_path, dpi=300)  # Save the plot as a PNG file with 300 dpi resolution
     plt.close()  # Close the plot to free up memory
@@ -762,7 +764,6 @@ def process_data_nophase(imgm_cla, imgm_affine, core_filename, output_dir, mask_
     print("\n" + "="*80)
     
     # Save summary to text file
-    timestamp_str = datetime.now().strftime("%Y%m%d_%H%M%S")
     summary_filename = f'QA_Summary_ASL_{timestamp_str}.txt'
     summary_path = f"{output_dir}/{summary_filename}"
     
@@ -862,7 +863,7 @@ def process_data_nophase(imgm_cla, imgm_affine, core_filename, output_dir, mask_
             title_p.font.out = True
             
             # Add mean image
-            mean_img_path = f"{output_dir}/Mean_image.png"
+            mean_img_path = f"{output_dir}/Mean_image_ASL_{timestamp_str}.png"
             if os.path.exists(mean_img_path):
                 left = Inches(1.5)
                 top = Inches(1.5)
@@ -881,7 +882,7 @@ def process_data_nophase(imgm_cla, imgm_affine, core_filename, output_dir, mask_
             title_p.font.bold = True
             
             # Add montage
-            montage_path = f"{output_dir}/mean_montage.png"
+            montage_path = f"{output_dir}/mean_montage_ASL_{timestamp_str}.png"
             if os.path.exists(montage_path):
                 slide.shapes.add_picture(montage_path, Inches(0.5), Inches(1.5), width=Inches(8.5))
             
@@ -897,8 +898,8 @@ def process_data_nophase(imgm_cla, imgm_affine, core_filename, output_dir, mask_
             title_p.font.bold = True
             
             # Add iSNR sagittal and coronal images side by side
-            isnr_sag_path = f"{output_dir}/iSNR_sag.png"
-            isnr_cor_path = f"{output_dir}/iSNR_cor.png"
+            isnr_sag_path = f"{output_dir}/iSNR_sag_ASL_{timestamp_str}.png"
+            isnr_cor_path = f"{output_dir}/iSNR_cor_ASL_{timestamp_str}.png"
             
             if os.path.exists(isnr_sag_path):
                 slide.shapes.add_picture(isnr_sag_path, Inches(0.5), Inches(1.2), width=Inches(4))
@@ -917,8 +918,8 @@ def process_data_nophase(imgm_cla, imgm_affine, core_filename, output_dir, mask_
             title_p.font.bold = True
             
             # Add tSNR sagittal and coronal images
-            tsnr_sag_path = f"{output_dir}/tSNR_sag.png"
-            tsnr_cor_path = f"{output_dir}/tSNR_cor.png"
+            tsnr_sag_path = f"{output_dir}/tSNR_sag_ASL_{timestamp_str}.png"
+            tsnr_cor_path = f"{output_dir}/tSNR_cor_ASL_{timestamp_str}.png"
             
             if os.path.exists(tsnr_sag_path):
                 slide.shapes.add_picture(tsnr_sag_path, Inches(0.5), Inches(1.2), width=Inches(4))
@@ -936,7 +937,7 @@ def process_data_nophase(imgm_cla, imgm_affine, core_filename, output_dir, mask_
             title_p.font.size = Pt(20)
             title_p.font.bold = True
             
-            tsnr_montage_path = f"{output_dir}/tSNR_montage.png"
+            tsnr_montage_path = f"{output_dir}/tSNR_montage_ASL_{timestamp_str}.png"
             if os.path.exists(tsnr_montage_path):
                 slide.shapes.add_picture(tsnr_montage_path, Inches(0.5), Inches(1.2), width=Inches(8.5))
             
@@ -952,8 +953,8 @@ def process_data_nophase(imgm_cla, imgm_affine, core_filename, output_dir, mask_
             title_p.font.bold = True
             
             # Add ROI images and time series
-            roi_path = f"{output_dir}/tSNR_w_ROI_images.png"
-            ts_path = f"{output_dir}/TS_images.png"
+            roi_path = f"{output_dir}/tSNR_w_ROI_images_ASL_{timestamp_str}.png"
+            ts_path = f"{output_dir}/TS_images_ASL_{timestamp_str}.png"
             
             if os.path.exists(roi_path):
                 slide.shapes.add_picture(roi_path, Inches(0.5), Inches(1.2), width=Inches(8.5))
@@ -984,8 +985,8 @@ def process_data_nophase(imgm_cla, imgm_affine, core_filename, output_dir, mask_
             title_p.font.bold = True
             
             # Add noise images
-            noise_path = f"{output_dir}/masked_noise.png"
-            ssn_path = f"{output_dir}/SSN.png"
+            noise_path = f"{output_dir}/masked_noise_ASL_{timestamp_str}.png"
+            ssn_path = f"{output_dir}/SSN_ASL_{timestamp_str}.png"
             
             if os.path.exists(noise_path):
                 slide.shapes.add_picture(noise_path, Inches(0.5), Inches(1.2), width=Inches(8.5))
@@ -1005,8 +1006,8 @@ def process_data_nophase(imgm_cla, imgm_affine, core_filename, output_dir, mask_
             title_p.font.bold = True
             
             # Add Ernst scaled tSNR images
-            tsnr_unit_time_path = f"{output_dir}/tSNR_per_unit_time.png"
-            tsnr_raw_path = f"{output_dir}/tSNR_raw.png"
+            tsnr_unit_time_path = f"{output_dir}/tSNR_per_unit_time_ASL_{timestamp_str}.png"
+            tsnr_raw_path = f"{output_dir}/tSNR_raw_ASL_{timestamp_str}.png"
             
             if os.path.exists(tsnr_unit_time_path):
                 slide.shapes.add_picture(tsnr_unit_time_path, Inches(0.5), Inches(1.2), width=Inches(4))
