@@ -632,10 +632,22 @@ def process_data_nophase(imgm_cla, imgm_affine, core_filename, output_dir, mask_
     # Calculate the standard deviation (STDev) of the signal intensity across the selected ROI over time
     std_patch = np.std(roi_data, axis=(0, 1))
 
-    std_patch = detrend(std_patch)
+    # Ensure no NaNs or Infs before detrending to avoid SciPy errors
+    if not np.all(np.isfinite(std_patch)):
+        std_patch = np.nan_to_num(std_patch, nan=0.0, posinf=0.0, neginf=0.0)
+    try:
+        std_patch = detrend(std_patch)
+    except Exception:
+        # If detrend still fails, fall back to the raw (sanitized) series
+        pass
 
-    # Detrend the average patch time series
-    detrended_patch = detrend(average_patch)
+    # Detrend the average patch time series, with the same safety handling
+    if not np.all(np.isfinite(average_patch)):
+        average_patch = np.nan_to_num(average_patch, nan=0.0, posinf=0.0, neginf=0.0)
+    try:
+        detrended_patch = detrend(average_patch)
+    except Exception:
+        detrended_patch = average_patch
 
     # Prepare the time points (x-axis) for the time series plot
     time_points = np.arange(slice_data.shape[2])
@@ -1232,47 +1244,51 @@ def create_combined_powerpoint(session_dir, all_output_dirs, all_metrics):
     return pptx_filename
 
 if __name__ == "__main__":
-    # Define all dataset file paths from the table - exact filenames
-    all_files = [
-        # Philips datasets
-        '/Users/cmilbourn/Documents/BGI_Data/BGI_tSNR_fromSally/fMRI-test/nifti_converted/TR2_MB3_doubleecho_2_1_ws_map/TR2_MB3_doubleecho_2_1_ws_map',
-        '/Users/cmilbourn/Documents/BGI_Data/BGI_tSNR_fromSally/fMRI-test/nifti_converted/TR1p5_MB3_doubleecho_14_1_ws_map/TR1p5_MB3_doubleecho_14_1_ws_map',
-        '/Users/cmilbourn/Documents/BGI_Data/BGI_tSNR_fromSally/fMRI-test/nifti_converted/TR1p25_MB2_doubleecho_9_1_ws_map/TR1p25_MB2_doubleecho_9_1_ws_map',
-        '/Users/cmilbourn/Documents/BGI_Data/BGI_tSNR_fromSally/fMRI-test/nifti_converted/TR1_MB3_singe_echo_15_1/TR1_MB3_singe_echo_15_1',
-        '/Users/cmilbourn/Documents/BGI_Data/BGI_tSNR_fromSally/fMRI-test/nifti_converted/TR1p25_MB3_doubleecho_8_1_ws_map/TR1p25_MB3_doubleecho_8_1_ws_map',
-        '/Users/cmilbourn/Documents/BGI_Data/BGI_tSNR_fromSally/fMRI-test/nifti_converted/TR1p25_MB2_S1p8_11_1_ws_map/TR1p25_MB2_S1p8_11_1_ws_map',
-        '/Users/cmilbourn/Documents/BGI_Data/BGI_tSNR_fromSally/fMRI-test/nifti_converted/TR1p25_MB3_S1p8_10_1_ws_map/TR1p25_MB3_S1p8_10_1_ws_map',
-        '/Users/cmilbourn/Documents/BGI_Data/BGI_tSNR_fromSally/fMRI-test/nifti_converted/TR1p5_MB2_doubleecho_13_1_ws_map/TR1p5_MB2_doubleecho_13_1_ws_map',
-        # GE datasets - sub003 (multiple acquisitions)
-        '/Users/cmilbourn/Documents/Sweet_Data/Development_Data/sub003/sub003-visit001-ses001/func/sub003-visit001-ses001-Sweet_20250909_phase3_de-5-fmri_MB3_ARC2_fMRI_2mm_longerTR-20251009110105.nii.gz',
-        '/Users/cmilbourn/Documents/Sweet_Data/Development_Data/sub003/sub003-visit001-ses001/func/sub003-visit001-ses001-Sweet_20250909_phase3_de-6-fmri_MB3_ARC2_fMRI_2mm_ShortTR-20251009110105.nii.gz',
-        '/Users/cmilbourn/Documents/Sweet_Data/Development_Data/sub003/sub003-visit001-ses001/func/sub003-visit001-ses001-Sweet_20250909_phase3_de-8-fmri_MB3_ARC2_fMRI_2mm_LongTR-20251009110105.nii.gz',
-        # GE datasets - sub001 visit 1 (multiple acquisitions)
-        '/Users/cmilbourn/Documents/Sweet_Data/Development_Data/Sweet_Data_BIDS_Dev/sub001/sub001-visit001/func/sub001-visit001_3315-101_Sweet_02092025_20250902150849_4_fmri_MB3_ARC2_fMRI_2mm.nii.gz',
-        '/Users/cmilbourn/Documents/Sweet_Data/Development_Data/Sweet_Data_BIDS_Dev/sub001/sub001-visit001/func/sub001-visit001_3315-101_Sweet_02092025_20250902150849_6_fmri_MB3_ARC2_fMRI_2mm_LongTR.nii.gz',
-        '/Users/cmilbourn/Documents/Sweet_Data/Development_Data/Sweet_Data_BIDS_Dev/sub001/sub001-visit001/func/sub001-visit001_3315-101_Sweet_02092025_20250902150849_7_fmri_MB3_ARC2_fMRI_2mm_LongerTR.nii.gz',
-        # GE datasets - sub001 visit 2
-        '/Users/cmilbourn/Documents/Sweet_Data/Development_Data/Sweet_Data_BIDS_Dev/sub001/sub001-visit002/func/sub001-visit002-ses001-task-rest-bold-pre.nii.gz',
-        # BGI dataset - sub008
-        '/Users/cmilbourn/Documents/BGI_Data/BGI_Data_BIDS/sub008/sub008_visit001/func/sub008_visit001_ses00fasted_task-rest_bold.nii.gz',
+    # Define 12 dataset file paths with optional TR overrides (use TR for Philips)
+    # Define all 16 dataset file paths with optional TR overrides
+    # First 8 files: TR will be read from .json files
+    # Last 8 files: TR specified manually from the table
+    dataset_configs = [
+        # Files 1-8: Sweet Data with JSON TR values
+        { 'path': '/Users/cmilbourn/Documents/Sweet_Data/Development_Data/Sweet_Data_BIDS_Dev/sub001/sub001-visit001/func/sub001-visit001_3315-101_Sweet_02092025_20250902150849_11_fmri_MB3_ARC2_fMRI_1.5_mm_iso.nii.gz' },
+        { 'path': '/Users/cmilbourn/Documents/Sweet_Data/Development_Data/Sweet_Data_BIDS_Dev/sub001/sub001-visit001/func/sub001-visit001_3315-101_Sweet_02092025_20250902150849_7_fmri_MB3_ARC2_fMRI_2mm_1.5.nii.gz' },
+        { 'path': '/Users/cmilbourn/Documents/Sweet_Data/Development_Data/Sweet_Data_BIDS_Dev/sub001/sub001-visit001/func/sub001-visit001_3315-101_Sweet_02092025_20250902150849_4_fmri_MB3_ARC2_fMRI_2mm.nii.gz' },
+        { 'path': '/Users/cmilbourn/Documents/Sweet_Data/Development_Data/Sweet_Data_BIDS_Dev/sub001/sub001-visit002/func/sub001-visit002-ses001-task-rest-bold-pre.nii.gz' },
+        { 'path': '/Users/cmilbourn/Documents/Sweet_Data/Development_Data/sub003/sub003-visit001-ses001/func/sub003-visit001-ses001-Sweet_20250909_phase3_de-9-fmri_MB3_ARC2_fMRI_2mm_pre-20251009110105.nii.gz' },
+        { 'path': '/Users/cmilbourn/Documents/Sweet_Data/Development_Data/sub003/sub003-visit001-ses001/func/sub003-visit001-ses001-Sweet_20250909_phase3_de-8-fmri_MB3_ARC2_fMRI_3mm-20251009110105.nii.gz' },
+        { 'path': '/Users/cmilbourn/Documents/Sweet_Data/Development_Data/sub003/sub003-visit001-ses001/func/sub003-visit001-ses001-Sweet_20250909_phase3_de-5-fmri_MB3_ARC2_fMRI_2mm_longerTR-20251009110105.nii.gz' },
+        { 'path': '/Users/cmilbourn/Documents/Sweet_Data/Development_Data/sub003/sub003-visit001-ses001/func/sub003-visit001-ses001-Sweet_20250909_phase3_de-2-fmri_MB3_ARC2_fMRI_2mm_pre-20251009110105.nii.gz' },
+        
+        # Files 9-16: BGI Data with manual TR values from the table
+        { 'path': '/Users/cmilbourn/Documents/BGI_Data/BGI_tSNR_fromSally/fMRI-test/nifti_converted/TR1_MB3_single_echo_15_1.nii.gz', 'TR': 1.0 },
+        { 'path': '/Users/cmilbourn/Documents/BGI_Data/BGI_tSNR_fromSally/fMRI-test/nifti_converted/TR1p5_MB2_doublecho_13_1_ws_map.nii.gz', 'TR': 1.5 },
+        { 'path': '/Users/cmilbourn/Documents/BGI_Data/BGI_tSNR_fromSally/fMRI-test/nifti_converted/TR1p5_MB3_doublecho_14_1_ws_map.nii.gz', 'TR': 1.5 },
+        { 'path': '/Users/cmilbourn/Documents/BGI_Data/BGI_tSNR_fromSally/fMRI-test/nifti_converted/TR1p25_MB2_doublecho_9_1_ws_map.nii.gz', 'TR': 1.25 },
+        { 'path': '/Users/cmilbourn/Documents/BGI_Data/BGI_tSNR_fromSally/fMRI-test/nifti_converted/TR1p25_MB2_S1p8_11_1_ws_map.nii.gz', 'TR': 1.25 },
+        { 'path': '/Users/cmilbourn/Documents/BGI_Data/BGI_tSNR_fromSally/fMRI-test/nifti_converted/TR1p25_MB3_doublecho_8_1_ws_map.nii.gz', 'TR': 1.25 },
+        { 'path': '/Users/cmilbourn/Documents/BGI_Data/BGI_tSNR_fromSally/fMRI-test/nifti_converted/TR1p25_MB3_S1p8_10_1_ws_map.nii.gz', 'TR': 1.25 },
+        { 'path': '/Users/cmilbourn/Documents/BGI_Data/BGI_tSNR_fromSally/fMRI-test/nifti_converted/TR2_MB3_doublecho_2_1_ws_map.nii.gz', 'TR': 2.0 },
     ]
-    
+
+
     # Check which files exist
-    existing_files = []
-    for fpath in all_files:
+    existing_configs = []
+    for cfg in dataset_configs:
+        fpath = cfg['path']
         if os.path.exists(fpath):
-            existing_files.append(fpath)
+            existing_configs.append(cfg)
             print(f"Found: {os.path.basename(fpath)}")
         else:
             print(f"Path does not exist: {fpath}")
-    
-    all_files = existing_files
-    
-    if not all_files:
+
+    if not existing_configs:
         print("No files found to process!")
         exit(1)
+
+    # Replace with verified list
+    dataset_configs = existing_configs
     
-    print(f"\nTotal files to process: {len(all_files)}")
+    print(f"\nTotal files to process: {len(dataset_configs)}")
     
     # Create base output directory
     base_output_dir = '/Users/cmilbourn/Documents/tSNR_check'
@@ -1288,9 +1304,11 @@ if __name__ == "__main__":
     all_output_dirs = []
     
     # Process each file
-    for file_idx, mag_file_path in enumerate(all_files):
+    for file_idx, cfg in enumerate(dataset_configs):
+        mag_file_path = cfg['path']
+        tr_override = cfg.get('TR')
         print(f"\n{'='*80}")
-        print(f"Processing file {file_idx + 1}/{len(all_files)}: {os.path.basename(mag_file_path)}")
+        print(f"Processing file {file_idx + 1}/{len(dataset_configs)}: {os.path.basename(mag_file_path)}")
         print(f"{'='*80}")
         
         try:
@@ -1306,6 +1324,8 @@ if __name__ == "__main__":
             OUTPUT_DIR = os.path.abspath(output_directory)
 
             print(f"Output directory: {OUTPUT_DIR}")
+            if tr_override is not None:
+                print(f"Using TR override = {tr_override}s for this dataset")
             
             # Remove first 2 dummy volumes using fslroi
             mag_file_nodummies = os.path.join(OUTPUT_DIR, core_filename + '_nodummies.nii.gz')
@@ -1334,7 +1354,7 @@ if __name__ == "__main__":
                 mask_data = None
             
             # Process and plot data
-            metrics = process_data_nophase(imgm_cla, imgm_cla_affine, core_filename, OUTPUT_DIR, mask_data, nifti_path=mag_file_path)
+            metrics = process_data_nophase(imgm_cla, imgm_cla_affine, core_filename, OUTPUT_DIR, mask_data, TR=tr_override, nifti_path=mag_file_path)
             all_metrics.append(metrics)
             all_output_dirs.append(OUTPUT_DIR)
             
