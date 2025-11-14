@@ -47,6 +47,19 @@ import subprocess
 import json
 import csv
 from datetime import datetime
+try:
+    from matplotlib_scalebar.scalebar import ScaleBar
+except ImportError:
+    print('matplotlib_scalebar not installed, scale bars will be skipped.')
+
+try:
+    from pptx import Presentation
+    from pptx.util import Inches, Pt
+    from pptx.enum.text import PP_ALIGN
+    PPTX_AVAILABLE = True
+except ImportError:
+    print('python-pptx not installed, PowerPoint generation will be skipped.')
+    PPTX_AVAILABLE = False
 
 #from ukat.data import fetch
 from fMRI_report_python.functions import snr
@@ -135,7 +148,7 @@ def process_data_nophase(imgm_cla, imgm_affine, core_filename, output_dir, mask_
     print(f"Slice index: {slice_index}")
     time_point = 1
     tsnrScale = 100
-    isnrScale = 100
+    isnrScale = 100  
     #isnrScale = 10
 
     # We want to define a patch ROI
@@ -165,6 +178,12 @@ def process_data_nophase(imgm_cla, imgm_affine, core_filename, output_dir, mask_
     # Assuming you have created a plot `plt` and want to save it as a PNG file
     output_filename = 'Mean_image.png'
     output_path = f"{output_dir}/{output_filename}"  # Construct the full output path
+    try:
+        from matplotlib_scalebar.scalebar import ScaleBar
+        scalebar = ScaleBar(2, 'mm', length_fraction=0.15, location='lower right', box_alpha=0.5, color='white')
+        axs.add_artist(scalebar)
+    except ImportError:
+        print('matplotlib_scalebar not installed, skipping scale bar.')
     fig.savefig(output_path, dpi=300)  # Save the plot as a PNG file with 300 dpi resolution
     plt.close()  # Close the plot to free up memory
 
@@ -194,6 +213,12 @@ def process_data_nophase(imgm_cla, imgm_affine, core_filename, output_dir, mask_
     # Save output
     output_filename = 'mean_montage.png'
     output_path = f"{output_dir}/{output_filename}"
+    try:
+        from matplotlib_scalebar.scalebar import ScaleBar
+        scalebar = ScaleBar(2, 'mm', length_fraction=0.15, location='lower right', box_alpha=0.5, color='white')
+        fig.axes[0].add_artist(scalebar)  # montage
+    except ImportError:
+        print('matplotlib_scalebar not installed, skipping scale bar.')
     plt.savefig(output_path, dpi=300, bbox_inches='tight')
 
     ############################## iSNR
@@ -262,6 +287,12 @@ def process_data_nophase(imgm_cla, imgm_affine, core_filename, output_dir, mask_
     # Save the image
     output_filename = 'masked_noise.png'
     output_path = f"{output_dir}/{output_filename}"
+    try:
+        from matplotlib_scalebar.scalebar import ScaleBar
+        scalebar = ScaleBar(2, 'mm', length_fraction=0.15, location='lower right', box_alpha=0.5, color='white')
+        axs[0].add_artist(scalebar)  # subplot array
+    except ImportError:
+        print('matplotlib_scalebar not installed, skipping scale bar.')
     fig.savefig(output_path, dpi=300)  
     plt.close()  # Close to free up memory
     
@@ -288,6 +319,12 @@ def process_data_nophase(imgm_cla, imgm_affine, core_filename, output_dir, mask_
     # Save the montage
     output_filename = 'noise_volume_montage.png'
     output_path = f"{output_dir}/{output_filename}"
+    try:
+        from matplotlib_scalebar.scalebar import ScaleBar
+        scalebar = ScaleBar(2, 'mm', length_fraction=0.15, location='lower right', box_alpha=0.5, color='white')
+        fig.axes[0].add_artist(scalebar)  # montage
+    except ImportError:
+        print('matplotlib_scalebar not installed, skipping scale bar.')
     plt.savefig(output_path, dpi=300)
     #plt.close()  # Free memory
 
@@ -304,6 +341,12 @@ def process_data_nophase(imgm_cla, imgm_affine, core_filename, output_dir, mask_
     # Save the montage
     output_filename = 'masked_noise_volume_montage.png'
     output_path = f"{output_dir}/{output_filename}"
+    try:
+        from matplotlib_scalebar.scalebar import ScaleBar
+        scalebar = ScaleBar(2, 'mm', length_fraction=0.15, location='lower right', box_alpha=0.5, color='white')
+        fig.axes[0].add_artist(scalebar)  # montage
+    except ImportError:
+        print('matplotlib_scalebar not installed, skipping scale bar.')
     plt.savefig(output_path, dpi=300)
     #plt.close()  # Free memory
 
@@ -320,6 +363,12 @@ def process_data_nophase(imgm_cla, imgm_affine, core_filename, output_dir, mask_
     # plt.show()  # Disabled for script mode
     output_filename = 'iSNR_sag.png'
     output_path = f"{output_dir}/{output_filename}"  # Construct the full output path
+    try:
+        from matplotlib_scalebar.scalebar import ScaleBar
+        scalebar = ScaleBar(2, 'mm', length_fraction=0.15, location='lower right', box_alpha=0.5, color='white')
+        axs.add_artist(scalebar)  # single axis
+    except ImportError:
+        print('matplotlib_scalebar not installed, skipping scale bar.')
     fig.savefig(output_path, dpi=300)  # Save the plot as a PNG file with 300 dpi resolution
     plt.close()  # Close the plot to free up memory
 
@@ -336,6 +385,12 @@ def process_data_nophase(imgm_cla, imgm_affine, core_filename, output_dir, mask_
     # plt.show()  # Disabled for script mode
     output_filename = 'iSNR_cor.png'
     output_path = f"{output_dir}/{output_filename}"  # Construct the full output path
+    try:
+        from matplotlib_scalebar.scalebar import ScaleBar
+        scalebar = ScaleBar(2, 'mm', length_fraction=0.15, location='lower right', box_alpha=0.5, color='white')
+        axs.add_artist(scalebar)  # single axis
+    except ImportError:
+        print('matplotlib_scalebar not installed, skipping scale bar.')
     fig.savefig(output_path, dpi=300)  # Save the plot as a PNG file with 300 dpi resolution
     plt.close()  # Close the plot to free up memory
 
@@ -355,6 +410,12 @@ def process_data_nophase(imgm_cla, imgm_affine, core_filename, output_dir, mask_
     # Save the montage as a PNG file
     output_filename = 'isnr_montage.png'
     output_path = f"{output_dir}/{output_filename}"
+    try:
+        from matplotlib_scalebar.scalebar import ScaleBar
+        scalebar = ScaleBar(2, 'mm', length_fraction=0.15, location='lower right', box_alpha=0.5, color='white')
+        fig.axes[0].add_artist(scalebar)  # montage
+    except ImportError:
+        print('matplotlib_scalebar not installed, skipping scale bar.')
     plt.savefig(output_path, dpi=300)  # Save the montage as a PNG file with 300 dpi resolution
 
     ############################## tSNR
@@ -428,6 +489,12 @@ def process_data_nophase(imgm_cla, imgm_affine, core_filename, output_dir, mask_
     # plt.show()  # Disabled for script mode
     output_filename = 'tSNR_sag.png'
     output_path = f"{output_dir}/{output_filename}"  # Construct the full output path
+    try:
+        from matplotlib_scalebar.scalebar import ScaleBar
+        scalebar = ScaleBar(2, 'mm', length_fraction=0.15, location='lower right', box_alpha=0.5, color='white')
+        axs.add_artist(scalebar)  # single axis
+    except ImportError:
+        print('matplotlib_scalebar not installed, skipping scale bar.')
     fig.savefig(output_path, dpi=300)  # Save the plot as a PNG file with 300 dpi resolution
     plt.close()  # Close the plot to free up memory
 
@@ -445,6 +512,12 @@ def process_data_nophase(imgm_cla, imgm_affine, core_filename, output_dir, mask_
     # plt.show()  # Disabled for script mode
     output_filename = 'tSNR_cor.png'
     output_path = f"{output_dir}/{output_filename}"  # Construct the full output path
+    try:
+        from matplotlib_scalebar.scalebar import ScaleBar
+        scalebar = ScaleBar(2, 'mm', length_fraction=0.15, location='lower right', box_alpha=0.5, color='white')
+        axs.add_artist(scalebar)  # single axis
+    except ImportError:
+        print('matplotlib_scalebar not installed, skipping scale bar.')
     fig.savefig(output_path, dpi=300)  # Save the plot as a PNG file with 300 dpi resolution
     plt.close()  # Close the plot to free up memory
 
@@ -493,9 +566,13 @@ def process_data_nophase(imgm_cla, imgm_affine, core_filename, output_dir, mask_
     axs_ut.axis(False)
     cb_ut = fig_ut.colorbar(im_ut, ax=axs_ut, shrink=0.6)
     cb_ut.set_label('tSNR / √TR')
-    
+    try:
+        from matplotlib_scalebar.scalebar import ScaleBar
+        scalebar = ScaleBar(2, 'mm', length_fraction=0.15, location='lower right', box_alpha=0.5, color='white')
+        axs_ut.add_artist(scalebar)
+    except ImportError:
+        print('matplotlib_scalebar not installed, skipping scale bar.')
     fig_ut.tight_layout()
-    # plt.show()  # Disabled for script mode
     fig_ut.savefig(f"{output_dir}/tSNR_per_unit_time.png", dpi=300)
     plt.close(fig_ut)
 
@@ -698,6 +775,101 @@ def process_data_nophase(imgm_cla, imgm_affine, core_filename, output_dir, mask_
     # The End
     return metrics
 
+def create_qa_powerpoint(output_dir, subject_name="QA Analysis"):
+    """
+    Create a PowerPoint presentation from QA output images
+    
+    Parameters:
+    -----------
+    output_dir : str
+        Path to the QA output directory containing PNG images
+    subject_name : str
+        Name to use in the title slide
+    """
+    
+    if not PPTX_AVAILABLE:
+        print("Skipping PowerPoint generation (python-pptx not installed)")
+        return None
+    
+    # Create presentation
+    prs = Presentation()
+    prs.slide_width = Inches(10)
+    prs.slide_height = Inches(7.5)
+    
+    # Define image order and titles
+    image_config = [
+        ('Mean_image.png', 'Mean Image'),
+        ('mean_montage.png', 'Mean Image Montage - All Slices'),
+        ('masked_noise.png', 'Noise Volume Analysis'),
+        ('noise_volume_montage.png', 'Noise Volume Montage'),
+        ('masked_noise_volume_montage.png', 'Masked Noise Volume Montage'),
+        ('iSNR_sag.png', 'iSNR Map - Sagittal View'),
+        ('iSNR_cor.png', 'iSNR Map - Coronal View'),
+        ('isnr_montage.png', 'iSNR Montage - All Slices'),
+        ('tSNR_sag.png', 'tSNR Map - Sagittal View'),
+        ('tSNR_cor.png', 'tSNR Map - Coronal View'),
+        ('tSNR_per_unit_time.png', 'tSNR per Unit Time'),
+        ('tSNR_raw.png', 'Raw tSNR Map'),
+        ('tSNR_montage.png', 'tSNR Montage - All Slices'),
+        ('tSNR_w_ROI_images.png', 'tSNR with ROI'),
+        ('TS_images.png', 'Time Series Analysis'),
+        ('SSN.png', 'Static Spatial Noise'),
+    ]
+    
+    # Add title slide
+    title_slide_layout = prs.slide_layouts[0]
+    slide = prs.slides.add_slide(title_slide_layout)
+    title = slide.shapes.title
+    subtitle = slide.placeholders[1]
+    
+    title.text = "fMRI Quality Assurance Report"
+    subtitle.text = f"{subject_name}\n{os.path.basename(output_dir)}"
+    
+    # Style title
+    title.text_frame.paragraphs[0].font.size = Pt(44)
+    subtitle.text_frame.paragraphs[0].font.size = Pt(18)
+    
+    # Add slides for each image
+    for img_filename, img_title in image_config:
+        img_path = os.path.join(output_dir, img_filename)
+        
+        if not os.path.exists(img_path):
+            continue
+        
+        # Create blank slide
+        blank_slide_layout = prs.slide_layouts[6]  # Blank layout
+        slide = prs.slides.add_slide(blank_slide_layout)
+        
+        # Add title
+        left = Inches(0.5)
+        top = Inches(0.3)
+        width = Inches(9)
+        height = Inches(0.6)
+        
+        txBox = slide.shapes.add_textbox(left, top, width, height)
+        tf = txBox.text_frame
+        tf.text = img_title
+        
+        # Style title
+        p = tf.paragraphs[0]
+        p.font.size = Pt(18)
+        p.font.bold = True
+        p.alignment = PP_ALIGN.CENTER
+        
+        # Add image
+        img_left = Inches(0.5)
+        img_top = Inches(1.1)
+        img_width = Inches(9)
+        
+        slide.shapes.add_picture(img_path, img_left, img_top, width=img_width)
+    
+    # Save presentation
+    pptx_filename = os.path.join(output_dir, f"QA_Report_{os.path.basename(output_dir)}.pptx")
+    prs.save(pptx_filename)
+    print(f"\nPowerPoint created: {pptx_filename}")
+    
+    return pptx_filename
+
 def run_qa_single_path(mypathname, pathname_m, extension, filename_pattern):
     """
     Run QA analysis for a single path configuration
@@ -772,6 +944,9 @@ def run_qa_single_path(mypathname, pathname_m, extension, filename_pattern):
         #process_data_nophase(imgm_cla, imgm_cla_affine, core_filename, OUTPUT_DIR)
         metrics = process_data_nophase(imgm_cla, imgm_cla_affine, core_filename, OUTPUT_DIR, mask_data, nifti_path=mag_file_path)
         all_metrics.append(metrics)
+        
+        # Create PowerPoint presentation
+        create_qa_powerpoint(OUTPUT_DIR, core_filename)
     
     # Save all metrics to CSV
     if all_metrics:
