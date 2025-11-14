@@ -768,21 +768,26 @@ def create_qa_powerpoint(output_dir, subject_name="QA Analysis"):
     prs.slide_height = Inches(7.5)
     
     # Define image order and titles
+    # Order: Mean/Noise, then tSNR (all datasets), then iSNR (all datasets), then other analyses
     image_config = [
+        # Mean and noise images first
         ('Mean_image.png', 'Mean Image'),
         ('mean_montage.png', 'Mean Image Montage - All Slices'),
         ('masked_noise.png', 'Noise Volume Analysis'),
         ('noise_volume_montage.png', 'Noise Volume Montage'),
         ('masked_noise_volume_montage.png', 'Masked Noise Volume Montage'),
-        ('iSNR_sag.png', 'iSNR Map - Sagittal View'),
-        ('iSNR_cor.png', 'iSNR Map - Coronal View'),
-        ('isnr_montage.png', 'iSNR Montage - All Slices'),
+        # tSNR images (all datasets show tSNR first)
         ('tSNR_sag.png', 'tSNR Map - Sagittal View'),
         ('tSNR_cor.png', 'tSNR Map - Coronal View'),
         ('tSNR_per_unit_time.png', 'tSNR per Unit Time'),
         ('tSNR_raw.png', 'Raw tSNR Map'),
         ('tSNR_montage.png', 'tSNR Montage - All Slices'),
         ('tSNR_w_ROI_images.png', 'tSNR with ROI'),
+        # iSNR images (all datasets show iSNR after tSNR)
+        ('iSNR_sag.png', 'iSNR Map - Sagittal View'),
+        ('iSNR_cor.png', 'iSNR Map - Coronal View'),
+        ('isnr_montage.png', 'iSNR Montage - All Slices'),
+        # Other analyses
         ('TS_images.png', 'Time Series Analysis'),
         ('SSN.png', 'Static Spatial Noise'),
     ]
@@ -1079,20 +1084,24 @@ def create_combined_powerpoint(session_dir, all_output_dirs, all_metrics):
     
     # Define image order and titles
     image_config = [
+        # Mean and noise images first
         ('Mean_image.png', 'Mean Image'),
         ('mean_montage.png', 'Mean Image Montage - All Slices'),
         ('masked_noise.png', 'Noise Volume Analysis'),
         ('noise_volume_montage.png', 'Noise Volume Montage'),
         ('masked_noise_volume_montage.png', 'Masked Noise Volume Montage'),
-        ('iSNR_sag.png', 'iSNR Map - Sagittal View'),
-        ('iSNR_cor.png', 'iSNR Map - Coronal View'),
-        ('isnr_montage.png', 'iSNR Montage - All Slices'),
+        # tSNR images (all datasets show tSNR first)
         ('tSNR_sag.png', 'tSNR Map - Sagittal View'),
         ('tSNR_cor.png', 'tSNR Map - Coronal View'),
         ('tSNR_per_unit_time.png', 'tSNR per Unit Time'),
         ('tSNR_raw.png', 'Raw tSNR Map'),
         ('tSNR_montage.png', 'tSNR Montage - All Slices'),
         ('tSNR_w_ROI_images.png', 'tSNR with ROI'),
+        # iSNR images (all datasets show iSNR after tSNR)
+        ('iSNR_sag.png', 'iSNR Map - Sagittal View'),
+        ('iSNR_cor.png', 'iSNR Map - Coronal View'),
+        ('isnr_montage.png', 'iSNR Montage - All Slices'),
+        # Other analyses
         ('TS_images.png', 'Time Series Analysis'),
         ('SSN.png', 'Static Spatial Noise'),
     ]
