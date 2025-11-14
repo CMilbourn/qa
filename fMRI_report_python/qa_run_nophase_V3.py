@@ -546,7 +546,7 @@ def process_data_nophase(imgm_cla, imgm_affine, core_filename, output_dir, mask_
     # Extract the 2D slice at the specified index from the 3D image data
     slice_data = imgm_cla_nn[:, :, slice_index,:]
     #slice_data_mtx = imgm_mtx_nn[:, :, slice_index,:]
-    print("Image data shape:", slice_data.shape)
+    print(f"ROI analysis: using slice {slice_index} with {slice_data.shape[2]} timepoints (shape: {slice_data.shape})")
 
     # Calculate the coordinates of the ROI
     x_end = x_start + roi_width
@@ -675,11 +675,12 @@ def process_data_nophase(imgm_cla, imgm_affine, core_filename, output_dir, mask_
     # Collect all metrics in a dictionary
     metrics = {
         'filename': core_filename,
-        'slice_index': slice_index,
+        'num_timepoints': imgm_cla_nn.shape[3],
+        'num_slices': imgm_cla.shape[2],
+        'slice_index_analyzed': slice_index,
         'mean_volume_std': mean_std,
         'mean_isnr': np.mean(isnr_obj_cla.isnr),
         'noise_value': np.mean(isnr_obj_cla.noise),
-        'num_slices': imgm_cla.shape[2],
         'mean_tsnr': my_mean_tsnr,
         'mean_tsnr_in_mask': np.mean(masked_tSNR) if mask_data is not None else None,
         'TR': TR,
@@ -687,28 +688,7 @@ def process_data_nophase(imgm_cla, imgm_affine, core_filename, output_dir, mask_
         'mean_tsnr_per_unit_time': mean_tsnr_unit_time,
         'mean_tsnr_roi': mean_tsnr_roi,
         'mean_ssn': mean_ssn,
-        'roi_x_start': x_start,
-        'roi_y_start': y_start,
-        'roi_width': roi_width,
-        'roi_height': roi_height
-    }
-
-    # The End
-    return metrics
-    metrics = {
-        'filename': core_filename,
-        'slice_index': slice_index,
-        'mean_volume_std': mean_std,
-        'mean_isnr': np.mean(isnr_obj_cla.isnr),
-        'noise_value': np.mean(isnr_obj_cla.noise),
-        'num_slices': imgm_cla.shape[2],
-        'mean_tsnr': my_mean_tsnr,
-        'mean_tsnr_in_mask': np.mean(masked_tSNR) if mask_data is not None else None,
-        'TR': TR,
-        'ernst_scaling': ErnstScaling,
-        'mean_tsnr_per_unit_time': mean_tsnr_unit_time,
-        'mean_tsnr_roi': mean_tsnr_roi,
-        'mean_ssn': mean_ssn,
+        'roi_slice': slice_index,
         'roi_x_start': x_start,
         'roi_y_start': y_start,
         'roi_width': roi_width,
@@ -740,8 +720,9 @@ def run_qa_single_path(mypathname, pathname_m, extension, filename_pattern):
 
         print(f"{core_filename}")
 
-        # Create an output directory for saving plots
-        output_directory = mypathname + 'qa_output_' + core_filename
+        # Create an output directory for saving plots with timestamp
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        output_directory = mypathname + f'qa_output_{core_filename}_{timestamp}'
         os.makedirs(output_directory, exist_ok=True)
         OUTPUT_DIR = os.path.abspath(output_directory)
 
