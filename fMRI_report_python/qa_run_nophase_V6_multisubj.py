@@ -47,6 +47,7 @@ import subprocess
 import json
 import csv
 from datetime import datetime
+import argparse
 try:
     from pptx import Presentation
     from pptx.util import Inches, Pt
@@ -1263,10 +1264,19 @@ def create_combined_powerpoint(session_dir, all_output_dirs, all_metrics):
     return pptx_filename
 
 if __name__ == "__main__":
-    # Define all 16 dataset file paths with optional TR overrides
-    # First 8 files: TR will be read from .json files
-    # Last 8 files: TR specified manually from the table
-    dataset_configs = [
+    # Allow selecting between full BOLD set (16) and a CBF set (3) at runtime
+    parser = argparse.ArgumentParser(description="Run QA across multiple fMRI datasets (V6)")
+    parser.add_argument(
+        "--set",
+        dest="dataset_set",
+        choices=["bold", "cbf", "mix"],
+        default="bold",
+        help="Which dataset group to run: 'bold' (16 datasets), 'cbf' (3 datasets), or 'mix' (user-specified 5)"
+    )
+    args = parser.parse_args()
+
+    # Define dataset groups
+    bold_dataset_configs = [
         # Files 1-7: Sweet Data 2mm and 3mm (faster to process)
         { 'path': '/Users/cmilbourn/Documents/Sweet_Data/Development_Data/Sweet_Data_BIDS_Dev/sub001/sub001-visit001/func/sub001-visit001_3315-101_Sweet_02092025_20250902150849_7_fmri_MB3_ARC2_fMRI_2mm_1.5.nii.gz' },
         { 'path': '/Users/cmilbourn/Documents/Sweet_Data/Development_Data/Sweet_Data_BIDS_Dev/sub001/sub001-visit001/func/sub001-visit001_3315-101_Sweet_02092025_20250902150849_4_fmri_MB3_ARC2_fMRI_2mm.nii.gz' },
@@ -1289,6 +1299,31 @@ if __name__ == "__main__":
         # File 16: 1.5mm iso (largest, process last)
         { 'path': '/Users/cmilbourn/Documents/Sweet_Data/Development_Data/Sweet_Data_BIDS_Dev/sub001/sub001-visit001/func/sub001-visit001_3315-101_Sweet_02092025_20250902150849_11_fmri_MB3_ARC2_fMRI_1.5_mm_iso.nii.gz' },
     ]
+
+    cbf_dataset_configs = [
+        { 'path': '/Users/cmilbourn/Documents/PhD_GE_Data/sub14_task-normo_asl.nii.gz' },
+        { 'path': '/Users/cmilbourn/Documents/Sweet_Data/Development_Data/Sweet_Data_BIDS_Dev/sub001/sub001-visit002/perf/sub001-visit002-ses001-task-rest-asl-pre.nii.gz' },
+        { 'path': '/Users/cmilbourn/Documents/Sweet_Data/Development_Data/Sweet_Data_BIDS_Dev/sub001/sub001-visit001/perf/sub001-visit001-ses001-task-rest-asl.nii.gz' },
+        { 'path': '/Users/cmilbourn/Documents/PhD_GE_Data/sub14_task-hyper_run-1_bold.nii.gz' },
+        { 'path': '/Users/cmilbourn/Documents/Sweet_Data/Development_Data/Sweet_Data_BIDS_Dev/sub001/sub001-visit003/func/sub001-visit003-ses001-task-rest-bold-pre.nii.gz' },
+    ]
+
+    # Mixed set: 5 paths (ASL x3 + BOLD x2) provided by user
+    mixed_dataset_configs = [
+        { 'path': '/Users/cmilbourn/Documents/PhD_GE_Data/sub14_task-normo_asl.nii.gz' },
+        { 'path': '/Users/cmilbourn/Documents/Sweet_Data/Development_Data/Sweet_Data_BIDS_Dev/sub001/sub001-visit002/perf/sub001-visit002-ses001-task-rest-asl-pre.nii.gz' },
+        { 'path': '/Users/cmilbourn/Documents/Sweet_Data/Development_Data/Sweet_Data_BIDS_Dev/sub001/sub001-visit001/perf/sub001-visit001-ses001-task-rest-asl.nii.gz' },
+        { 'path': '/Users/cmilbourn/Documents/PhD_GE_Data/sub14_task-hyper_run-1_bold.nii.gz' },
+        { 'path': '/Users/cmilbourn/Documents/Sweet_Data/Development_Data/Sweet_Data_BIDS_Dev/sub001/sub001-visit003/func/sub001-visit003-ses001-task-rest-bold-pre.nii.gz' },
+    ]
+
+    print(f"Dataset set selected: {args.dataset_set}")
+    if args.dataset_set == "bold":
+        dataset_configs = bold_dataset_configs
+    elif args.dataset_set == "cbf":
+        dataset_configs = cbf_dataset_configs
+    else:
+        dataset_configs = mixed_dataset_configs
 
 
     # Check which files exist
