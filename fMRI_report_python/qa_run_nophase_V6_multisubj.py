@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # coding: utf-8
 # qa_run_nophase.py based on qa_run_nophase.ipynb  
-
+#reorder_qa_pptx_by_type.py
 # # Quality Assurance (QA) Python Version
 # 
 # This notebook gives example uses of image based QA metrics in `qa`.
