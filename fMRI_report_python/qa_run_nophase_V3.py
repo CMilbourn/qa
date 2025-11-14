@@ -48,14 +48,10 @@ import json
 import csv
 from datetime import datetime
 try:
-    from matplotlib_scalebar.scalebar import ScaleBar
-except ImportError:
-    print('matplotlib_scalebar not installed, scale bars will be skipped.')
-
-try:
     from pptx import Presentation
     from pptx.util import Inches, Pt
     from pptx.enum.text import PP_ALIGN
+    from PIL import Image
     PPTX_AVAILABLE = True
 except ImportError:
     print('python-pptx not installed, PowerPoint generation will be skipped.')
@@ -147,9 +143,10 @@ def process_data_nophase(imgm_cla, imgm_affine, core_filename, output_dir, mask_
     slice_index_cor = 50 #65 55
     print(f"Slice index: {slice_index}")
     time_point = 1
-    tsnrScale = 100
-    isnrScale = 100  
-    #isnrScale = 10
+    #tsnrScale = 100
+    tsnrScale = 10
+    #isnrScale = 100  
+    isnrScale = 10
 
     # We want to define a patch ROI
     # Define parameters for ROI size and position
@@ -178,12 +175,6 @@ def process_data_nophase(imgm_cla, imgm_affine, core_filename, output_dir, mask_
     # Assuming you have created a plot `plt` and want to save it as a PNG file
     output_filename = 'Mean_image.png'
     output_path = f"{output_dir}/{output_filename}"  # Construct the full output path
-    try:
-        from matplotlib_scalebar.scalebar import ScaleBar
-        scalebar = ScaleBar(2, 'mm', length_fraction=0.15, location='lower right', box_alpha=0.5, color='white')
-        axs.add_artist(scalebar)
-    except ImportError:
-        print('matplotlib_scalebar not installed, skipping scale bar.')
     fig.savefig(output_path, dpi=300)  # Save the plot as a PNG file with 300 dpi resolution
     plt.close()  # Close the plot to free up memory
 
@@ -287,12 +278,6 @@ def process_data_nophase(imgm_cla, imgm_affine, core_filename, output_dir, mask_
     # Save the image
     output_filename = 'masked_noise.png'
     output_path = f"{output_dir}/{output_filename}"
-    try:
-        from matplotlib_scalebar.scalebar import ScaleBar
-        scalebar = ScaleBar(2, 'mm', length_fraction=0.15, location='lower right', box_alpha=0.5, color='white')
-        axs[0].add_artist(scalebar)  # subplot array
-    except ImportError:
-        print('matplotlib_scalebar not installed, skipping scale bar.')
     fig.savefig(output_path, dpi=300)  
     plt.close()  # Close to free up memory
     
@@ -361,12 +346,6 @@ def process_data_nophase(imgm_cla, imgm_affine, core_filename, output_dir, mask_
     # plt.show()  # Disabled for script mode
     output_filename = 'iSNR_sag.png'
     output_path = f"{output_dir}/{output_filename}"  # Construct the full output path
-    try:
-        from matplotlib_scalebar.scalebar import ScaleBar
-        scalebar = ScaleBar(2, 'mm', length_fraction=0.15, location='lower right', box_alpha=0.5, color='white')
-        axs.add_artist(scalebar)  # single axis
-    except ImportError:
-        print('matplotlib_scalebar not installed, skipping scale bar.')
     fig.savefig(output_path, dpi=300)  # Save the plot as a PNG file with 300 dpi resolution
     plt.close()  # Close the plot to free up memory
 
@@ -383,12 +362,6 @@ def process_data_nophase(imgm_cla, imgm_affine, core_filename, output_dir, mask_
     # plt.show()  # Disabled for script mode
     output_filename = 'iSNR_cor.png'
     output_path = f"{output_dir}/{output_filename}"  # Construct the full output path
-    try:
-        from matplotlib_scalebar.scalebar import ScaleBar
-        scalebar = ScaleBar(2, 'mm', length_fraction=0.15, location='lower right', box_alpha=0.5, color='white')
-        axs.add_artist(scalebar)  # single axis
-    except ImportError:
-        print('matplotlib_scalebar not installed, skipping scale bar.')
     fig.savefig(output_path, dpi=300)  # Save the plot as a PNG file with 300 dpi resolution
     plt.close()  # Close the plot to free up memory
 
@@ -487,12 +460,6 @@ def process_data_nophase(imgm_cla, imgm_affine, core_filename, output_dir, mask_
     # plt.show()  # Disabled for script mode
     output_filename = 'tSNR_sag.png'
     output_path = f"{output_dir}/{output_filename}"  # Construct the full output path
-    try:
-        from matplotlib_scalebar.scalebar import ScaleBar
-        scalebar = ScaleBar(2, 'mm', length_fraction=0.15, location='lower right', box_alpha=0.5, color='white')
-        axs.add_artist(scalebar)  # single axis
-    except ImportError:
-        print('matplotlib_scalebar not installed, skipping scale bar.')
     fig.savefig(output_path, dpi=300)  # Save the plot as a PNG file with 300 dpi resolution
     plt.close()  # Close the plot to free up memory
 
@@ -510,12 +477,6 @@ def process_data_nophase(imgm_cla, imgm_affine, core_filename, output_dir, mask_
     # plt.show()  # Disabled for script mode
     output_filename = 'tSNR_cor.png'
     output_path = f"{output_dir}/{output_filename}"  # Construct the full output path
-    try:
-        from matplotlib_scalebar.scalebar import ScaleBar
-        scalebar = ScaleBar(2, 'mm', length_fraction=0.15, location='lower right', box_alpha=0.5, color='white')
-        axs.add_artist(scalebar)  # single axis
-    except ImportError:
-        print('matplotlib_scalebar not installed, skipping scale bar.')
     fig.savefig(output_path, dpi=300)  # Save the plot as a PNG file with 300 dpi resolution
     plt.close()  # Close the plot to free up memory
 
@@ -564,12 +525,6 @@ def process_data_nophase(imgm_cla, imgm_affine, core_filename, output_dir, mask_
     axs_ut.axis(False)
     cb_ut = fig_ut.colorbar(im_ut, ax=axs_ut, shrink=0.6)
     cb_ut.set_label('tSNR / √TR')
-    try:
-        from matplotlib_scalebar.scalebar import ScaleBar
-        scalebar = ScaleBar(2, 'mm', length_fraction=0.15, location='lower right', box_alpha=0.5, color='white')
-        axs_ut.add_artist(scalebar)
-    except ImportError:
-        print('matplotlib_scalebar not installed, skipping scale bar.')
     fig_ut.tight_layout()
     fig_ut.savefig(f"{output_dir}/tSNR_per_unit_time.png", dpi=300)
     plt.close(fig_ut)
@@ -860,12 +815,113 @@ def create_qa_powerpoint(output_dir, subject_name="QA Analysis"):
         p.font.bold = True
         p.alignment = PP_ALIGN.CENTER
         
-        # Add image
-        img_left = Inches(0.5)
-        img_top = Inches(1.1)
-        img_width = Inches(9)
+        # Calculate image dimensions to fit on slide
+        # Available space: slide height - title height - margins
+        max_width = Inches(9)
+        max_height = Inches(6.2)  # 7.5 - 0.3 (top) - 0.6 (title) - 0.4 (margin)
         
-        slide.shapes.add_picture(img_path, img_left, img_top, width=img_width)
+        # Get image dimensions
+        try:
+            img = Image.open(img_path)
+            img_width, img_height = img.size
+            
+            # Calculate scaling to fit within max dimensions while preserving aspect ratio
+            width_ratio = max_width / Inches(img_width / 96)  # Assuming 96 DPI
+            height_ratio = max_height / Inches(img_height / 96)
+            scale_ratio = min(width_ratio, height_ratio, 1.0)  # Don't upscale
+            
+            final_width = Inches(img_width / 96) * scale_ratio
+            final_height = Inches(img_height / 96) * scale_ratio
+            
+            # Center the image horizontally
+            img_left = (Inches(10) - final_width) / 2
+            img_top = Inches(1.1)
+            
+            slide.shapes.add_picture(img_path, img_left, img_top, width=final_width, height=final_height)
+        except Exception as e:
+            # Fallback: use fixed width
+            img_left = Inches(0.5)
+            img_top = Inches(1.1)
+            slide.shapes.add_picture(img_path, img_left, img_top, width=max_width)
+    
+    # Add CSV metrics slide
+    csv_files = glob(os.path.join(os.path.dirname(output_dir), 'qa_metrics_*.csv'))
+    if csv_files:
+        csv_path = csv_files[-1]  # Get most recent
+        
+        # Create blank slide for table
+        blank_slide_layout = prs.slide_layouts[6]
+        slide = prs.slides.add_slide(blank_slide_layout)
+        
+        # Add title
+        txBox = slide.shapes.add_textbox(Inches(0.5), Inches(0.3), Inches(9), Inches(0.6))
+        tf = txBox.text_frame
+        tf.text = "QA Metrics Summary"
+        p = tf.paragraphs[0]
+        p.font.size = Pt(18)
+        p.font.bold = True
+        p.alignment = PP_ALIGN.CENTER
+        
+        # Read CSV and add as table
+        try:
+            with open(csv_path, 'r') as f:
+                reader = csv.DictReader(f)
+                rows = list(reader)
+                
+            if rows:
+                # Create table with key metrics only (to fit on slide)
+                key_metrics = [
+                    'num_timepoints', 'num_slices', 'mean_volume_std',
+                    'mean_isnr', 'mean_tsnr', 'TR', 'mean_tsnr_per_unit_time',
+                    'mean_tsnr_roi', 'mean_ssn'
+                ]
+                
+                # Filter to key metrics that exist
+                available_metrics = [m for m in key_metrics if m in rows[0]]
+                
+                # Create table (2 columns: metric name, value)
+                table_rows = len(available_metrics) + 1  # +1 for header
+                table_cols = 2
+                
+                left = Inches(1.5)
+                top = Inches(1.2)
+                width = Inches(7)
+                height = Inches(5.5)
+                
+                table = slide.shapes.add_table(table_rows, table_cols, left, top, width, height).table
+                
+                # Set column widths
+                table.columns[0].width = Inches(4)
+                table.columns[1].width = Inches(3)
+                
+                # Header row
+                table.cell(0, 0).text = "Metric"
+                table.cell(0, 1).text = "Value"
+                for cell in [table.cell(0, 0), table.cell(0, 1)]:
+                    cell.text_frame.paragraphs[0].font.bold = True
+                    cell.text_frame.paragraphs[0].font.size = Pt(12)
+                
+                # Data rows
+                for i, metric in enumerate(available_metrics):
+                    # Format metric name
+                    metric_display = metric.replace('_', ' ').title()
+                    table.cell(i + 1, 0).text = metric_display
+                    
+                    # Format value
+                    value = rows[0][metric]
+                    try:
+                        # Try to format as float with 2 decimals
+                        float_val = float(value)
+                        table.cell(i + 1, 1).text = f"{float_val:.2f}"
+                    except (ValueError, TypeError):
+                        table.cell(i + 1, 1).text = str(value)
+                    
+                    # Set font size
+                    for j in range(2):
+                        table.cell(i + 1, j).text_frame.paragraphs[0].font.size = Pt(11)
+                        
+        except Exception as e:
+            print(f"Could not add CSV table: {e}")
     
     # Save presentation
     pptx_filename = os.path.join(output_dir, f"QA_Report_{os.path.basename(output_dir)}.pptx")
