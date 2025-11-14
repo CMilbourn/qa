@@ -753,12 +753,26 @@ def run_qa_single_path(mypathname, pathname_m, extension, filename_pattern):
         # Find the corresponding magnitude (.nii) and phase (_ph.nii) files for the current core filename
         mag_file_path = os.path.join(pathname_m, core_filename + extension)
         print(mag_file_path)
+        
+        # Remove first 2 dummy volumes using fslroi
+        mag_file_nodummies = os.path.join(OUTPUT_DIR, core_filename + '_nodummies' + extension)
+        print(f"Removing first 2 dummy volumes with fslroi...")
+        fslroi_cmd = f"fslroi {mag_file_path} {mag_file_nodummies} 2 -1"
+        result = subprocess.run(fslroi_cmd, shell=True, capture_output=True, text=True)
+        if result.returncode != 0:
+            print(f"Warning: fslroi failed: {result.stderr}")
+            print("Proceeding with original file...")
+            mag_file_to_use = mag_file_path
+        else:
+            print(f"Dummy volumes removed. Using: {mag_file_nodummies}")
+            mag_file_to_use = mag_file_nodummies
+        
         # Load magnitude data only
         print('Loading just mag')
-        imgm_cla, imgm_cla_affine = load_data(mag_file_path)
+        imgm_cla, imgm_cla_affine = load_data(mag_file_to_use)
         #imgp_cla, imgp_cla_affine = load_data(phase_file_path)
 
-        print(mag_file_path)
+        print(mag_file_to_use)
         #print(phase_file_path)
 
         # MASK
@@ -780,7 +794,9 @@ def run_qa_single_path(mypathname, pathname_m, extension, filename_pattern):
     
     # Save all metrics to CSV
     if all_metrics:
-        csv_path = os.path.join(mypathname, f'qa_metrics_{datetime.now().strftime("%Y%m%d_%H%M%S")}.csv')
+        # Use the first filename for the CSV name (or combine if multiple files)
+        first_filename = list(core_filenames)[0] if len(core_filenames) == 1 else 'multiple_files'
+        csv_path = os.path.join(mypathname, f'qa_metrics_{first_filename}_{datetime.now().strftime("%Y%m%d_%H%M%S")}.csv')
         with open(csv_path, 'w', newline='') as csvfile:
             fieldnames = all_metrics[0].keys()
             writer = csv.DictWriter(csvfile, fieldnames=fieldnames)

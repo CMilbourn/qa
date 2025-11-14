@@ -11,7 +11,7 @@ if __name__ == "__main__":
     extension = '.nii.gz'  # this can be .nii or .nii.gz
     
     # Search pattern for filenames
-    filename_pattern = 'sub003-visit001-ses001-Sweet_20250909_phase3_de-2-fmri_MB3_ARC2_fMRI_2mm_pre-20251009110105'
+    filename_pattern = 'sub003-visit001-ses001-Sweet_20250909_phase3_de-5-fmri_MB3_ARC2_fMRI_2mm_longerTR-20251009110105'
     
     # Run the QA analysis
     run_qa_single_path(mypathname, pathname_m, extension, filename_pattern)
