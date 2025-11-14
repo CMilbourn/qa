@@ -136,12 +136,12 @@ def process_data_nophase(imgm_cla, imgm_affine, core_filename, output_dir, mask_
     # Lots of PNG images of every plot
 
     ############################## Plotting mean images
-    # Set slice (3d) and time (4d)
-    #slice_index = round(imgm_cla.shape[2] * 2 / 3)
-    slice_index = 12
-    slice_index_sag = 50 #60 50
-    slice_index_cor = 50 #65 55
-    print(f"Slice index: {slice_index}")
+    # Set slice (3d) and time (4d) - use middle slices for all dimensions
+    slice_index = imgm_cla.shape[2] // 2  # Middle axial slice
+    slice_index_sag = imgm_cla.shape[0] // 2  # Middle sagittal slice
+    slice_index_cor = imgm_cla.shape[1] // 2  # Middle coronal slice
+    print(f"Slice indices - Axial: {slice_index}, Sagittal: {slice_index_sag}, Coronal: {slice_index_cor}")
+    print(f"Image dimensions: {imgm_cla.shape}")
     time_point = 1
     tsnrScale = 100
     #tsnrScale = 10
