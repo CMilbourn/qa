@@ -930,50 +930,69 @@ def create_qa_powerpoint(output_dir, subject_name="QA Analysis"):
     
     return pptx_filename
 
-def run_qa_single_path(mypathname, pathname_m, extension, filename_pattern, base_output_dir='/Users/cmilbourn/Documents/tSNR_check'):
+def run_qa_multi_datasets(base_data_dir, extension='.nii.gz', filename_pattern='*task-rest-bold', 
+                          base_output_dir='/Users/cmilbourn/Documents/tSNR_check'):
     """
-    Run QA analysis for a single path configuration
-    This function contains the main processing logic that was previously in __main__
+    Run QA analysis for multiple datasets and combine into single PowerPoint and CSV
     
     Parameters:
     -----------
+    base_data_dir : str
+        Base directory containing multiple subject/session folders
+    extension : str
+        File extension (.nii.gz or .nii)
+    filename_pattern : str
+        Pattern to match fMRI files
     base_output_dir : str
-        Base directory for all QA outputs (default: /Users/cmilbourn/Documents/tSNR_check)
+        Base directory for all QA outputs
     """
-    core_filenames = set(
-        os.path.splitext(os.path.splitext(os.path.basename(file_path))[0])[0]  # Handle double extensions
-        for file_path in glob(os.path.join(pathname_m, filename_pattern + extension))
-    )
-
-    print("Files found:", glob(os.path.join(pathname_m, filename_pattern + extension)))
-    print("Core filenames:", core_filenames)
-    print("Now beginning loop")
     
-    # Create base output directory if it doesn't exist
+    # Find all fMRI files matching the pattern
+    search_pattern = os.path.join(base_data_dir, '**', f'{filename_pattern}{extension}')
+    all_files = glob(search_pattern, recursive=True)
+    
+    print(f"Found {len(all_files)} files matching pattern:")
+    for f in all_files:
+        print(f"  {f}")
+    
+    if not all_files:
+        print("No files found!")
+        return
+    
+    # Create base output directory
     os.makedirs(base_output_dir, exist_ok=True)
     
-    # List to store all metrics
+    # Create a timestamped session directory
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    session_dir = os.path.join(base_output_dir, f'qa_session_{timestamp}')
+    os.makedirs(session_dir, exist_ok=True)
+    
+    # List to store all metrics and output directories
     all_metrics = []
-     
-    # Loop over each core filename found
-    for core_filename in core_filenames:
+    all_output_dirs = []
+    
+    # Process each file
+    for file_idx, mag_file_path in enumerate(all_files):
+        print(f"\n{'='*80}")
+        print(f"Processing file {file_idx + 1}/{len(all_files)}: {os.path.basename(mag_file_path)}")
+        print(f"{'='*80}")
+        
+        # Extract a clean name for this dataset
+        core_filename = os.path.splitext(os.path.splitext(os.path.basename(mag_file_path))[0])[0]
+        pathname_m = os.path.dirname(mag_file_path)
 
-        print(f"{core_filename}")
+        # Extract a clean name for this dataset
+        core_filename = os.path.splitext(os.path.splitext(os.path.basename(mag_file_path))[0])[0]
+        pathname_m = os.path.dirname(mag_file_path)
 
-        # Create an output directory for saving plots with timestamp
-        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-        output_directory = os.path.join(base_output_dir, f'qa_output_{core_filename}_{timestamp}')
+        print(f"Core filename: {core_filename}")
+
+        # Create an output directory for saving plots
+        output_directory = os.path.join(session_dir, f'{core_filename}')
         os.makedirs(output_directory, exist_ok=True)
         OUTPUT_DIR = os.path.abspath(output_directory)
 
-        print(f"{OUTPUT_DIR}")
-
-        # Create a dictionary to store loaded data for each core filename
-        file_data = {}
-
-        # Find the corresponding magnitude (.nii) and phase (_ph.nii) files for the current core filename
-        mag_file_path = os.path.join(pathname_m, core_filename + extension)
-        print(mag_file_path)
+        print(f"Output directory: {OUTPUT_DIR}")
         
         # Remove first 2 dummy volumes using fslroi
         mag_file_nodummies = os.path.join(OUTPUT_DIR, core_filename + '_nodummies' + extension)
@@ -989,12 +1008,8 @@ def run_qa_single_path(mypathname, pathname_m, extension, filename_pattern, base
             mag_file_to_use = mag_file_nodummies
         
         # Load magnitude data only
-        print('Loading just mag')
+        print('Loading magnitude data...')
         imgm_cla, imgm_cla_affine = load_data(mag_file_to_use)
-        #imgp_cla, imgp_cla_affine = load_data(phase_file_path)
-
-        print(mag_file_to_use)
-        #print(phase_file_path)
 
         # MASK
         mask_path = find_mask_file(pathname_m)
@@ -1005,47 +1020,348 @@ def run_qa_single_path(mypathname, pathname_m, extension, filename_pattern, base
             print("No mask file found.")
             mask_data = None
         
-        # Store loaded data in the dictionary with the core filename as the key
-        file_data[core_filename] = (imgm_cla)
-
         # Process and plot data
-        #process_data_nophase(imgm_cla, imgm_cla_affine, core_filename, OUTPUT_DIR)
         metrics = process_data_nophase(imgm_cla, imgm_cla_affine, core_filename, OUTPUT_DIR, mask_data, nifti_path=mag_file_path)
         all_metrics.append(metrics)
-        
-        # Create PowerPoint presentation
-        create_qa_powerpoint(OUTPUT_DIR, core_filename)
+        all_output_dirs.append(OUTPUT_DIR)
     
-    # Save all metrics to CSV
+    # Create combined PowerPoint presentation
+    print(f"\n{'='*80}")
+    print("Creating combined PowerPoint presentation...")
+    print(f"{'='*80}")
+    create_combined_powerpoint(session_dir, all_output_dirs, all_metrics)
+    
+    # Save combined metrics to CSV
     if all_metrics:
-        # Use the first filename for the CSV name (or combine if multiple files)
-        first_filename = list(core_filenames)[0] if len(core_filenames) == 1 else 'multiple_files'
-        csv_path = os.path.join(base_output_dir, f'qa_metrics_{first_filename}_{datetime.now().strftime("%Y%m%d_%H%M%S")}.csv')
+        csv_path = os.path.join(session_dir, f'qa_metrics_combined_{timestamp}.csv')
         with open(csv_path, 'w', newline='') as csvfile:
             fieldnames = all_metrics[0].keys()
             writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
             writer.writeheader()
             for metrics in all_metrics:
                 writer.writerow(metrics)
-        print(f"\nMetrics saved to: {csv_path}")
+        print(f"\nCombined metrics CSV saved to: {csv_path}")
+
+def create_combined_powerpoint(session_dir, all_output_dirs, all_metrics):
+    """
+    Create a single PowerPoint with all datasets
+    
+    Parameters:
+    -----------
+    session_dir : str
+        Session directory for output
+    all_output_dirs : list
+        List of output directories for each dataset
+    all_metrics : list
+        List of metrics dictionaries for each dataset
+    """
+    
+    if not PPTX_AVAILABLE:
+        print("Skipping PowerPoint generation (python-pptx not installed)")
+        return None
+    
+    # Create presentation
+    prs = Presentation()
+    prs.slide_width = Inches(10)
+    prs.slide_height = Inches(7.5)
+    
+    # Define image order and titles
+    image_config = [
+        ('Mean_image.png', 'Mean Image'),
+        ('mean_montage.png', 'Mean Image Montage - All Slices'),
+        ('masked_noise.png', 'Noise Volume Analysis'),
+        ('noise_volume_montage.png', 'Noise Volume Montage'),
+        ('masked_noise_volume_montage.png', 'Masked Noise Volume Montage'),
+        ('iSNR_sag.png', 'iSNR Map - Sagittal View'),
+        ('iSNR_cor.png', 'iSNR Map - Coronal View'),
+        ('isnr_montage.png', 'iSNR Montage - All Slices'),
+        ('tSNR_sag.png', 'tSNR Map - Sagittal View'),
+        ('tSNR_cor.png', 'tSNR Map - Coronal View'),
+        ('tSNR_per_unit_time.png', 'tSNR per Unit Time'),
+        ('tSNR_raw.png', 'Raw tSNR Map'),
+        ('tSNR_montage.png', 'tSNR Montage - All Slices'),
+        ('tSNR_w_ROI_images.png', 'tSNR with ROI'),
+        ('TS_images.png', 'Time Series Analysis'),
+        ('SSN.png', 'Static Spatial Noise'),
+    ]
+    
+    # Add title slide
+    title_slide_layout = prs.slide_layouts[0]
+    slide = prs.slides.add_slide(title_slide_layout)
+    title = slide.shapes.title
+    subtitle = slide.placeholders[1]
+    
+    title.text = "fMRI Quality Assurance Report"
+    subtitle.text = f"Combined Report - {len(all_output_dirs)} Datasets\n{datetime.now().strftime('%Y-%m-%d %H:%M')}"
+    
+    # Style title
+    title.text_frame.paragraphs[0].font.size = Pt(44)
+    subtitle.text_frame.paragraphs[0].font.size = Pt(18)
+    
+    # Add slides for each dataset
+    for dataset_idx, output_dir in enumerate(all_output_dirs):
+        dataset_name = os.path.basename(output_dir)
+        
+        # Add dataset separator slide
+        blank_slide_layout = prs.slide_layouts[6]
+        slide = prs.slides.add_slide(blank_slide_layout)
+        txBox = slide.shapes.add_textbox(Inches(1), Inches(3), Inches(8), Inches(1.5))
+        tf = txBox.text_frame
+        tf.text = f"Dataset {dataset_idx + 1}/{len(all_output_dirs)}\n{dataset_name}"
+        p = tf.paragraphs[0]
+        p.font.size = Pt(32)
+        p.font.bold = True
+        p.alignment = PP_ALIGN.CENTER
+        
+        # Add image slides for this dataset
+        for img_filename, img_title in image_config:
+            img_path = os.path.join(output_dir, img_filename)
+            
+            if not os.path.exists(img_path):
+                continue
+            
+            # Create blank slide
+            slide = prs.slides.add_slide(blank_slide_layout)
+            
+            # Add title with dataset name
+            txBox = slide.shapes.add_textbox(Inches(0.5), Inches(0.3), Inches(9), Inches(0.6))
+            tf = txBox.text_frame
+            tf.text = f"{img_title} - {dataset_name}"
+            
+            # Style title
+            p = tf.paragraphs[0]
+            p.font.size = Pt(16)
+            p.font.bold = True
+            p.alignment = PP_ALIGN.CENTER
+            
+            # Calculate image dimensions to fit on slide
+            max_width = Inches(9)
+            max_height = Inches(6.2)
+            
+            # Get image dimensions and scale
+            try:
+                img = Image.open(img_path)
+                img_width, img_height = img.size
+                
+                width_ratio = max_width / Inches(img_width / 96)
+                height_ratio = max_height / Inches(img_height / 96)
+                scale_ratio = min(width_ratio, height_ratio, 1.0)
+                
+                final_width = Inches(img_width / 96) * scale_ratio
+                final_height = Inches(img_height / 96) * scale_ratio
+                
+                img_left = (Inches(10) - final_width) / 2
+                img_top = Inches(1.1)
+                
+                slide.shapes.add_picture(img_path, img_left, img_top, width=final_width, height=final_height)
+            except Exception as e:
+                img_left = Inches(0.5)
+                img_top = Inches(1.1)
+                slide.shapes.add_picture(img_path, img_left, img_top, width=max_width)
+    
+    # Add combined CSV metrics table slide
+    if all_metrics:
+        blank_slide_layout = prs.slide_layouts[6]
+        slide = prs.slides.add_slide(blank_slide_layout)
+        
+        # Add title
+        txBox = slide.shapes.add_textbox(Inches(0.5), Inches(0.3), Inches(9), Inches(0.6))
+        tf = txBox.text_frame
+        tf.text = "QA Metrics Summary - All Datasets"
+        p = tf.paragraphs[0]
+        p.font.size = Pt(18)
+        p.font.bold = True
+        p.alignment = PP_ALIGN.CENTER
+        
+        # Create table with key metrics
+        try:
+            key_metrics = [
+                'filename', 'num_timepoints', 'mean_isnr', 'mean_tsnr', 
+                'mean_tsnr_per_unit_time', 'mean_tsnr_roi'
+            ]
+            
+            # Filter to available metrics
+            available_metrics = [m for m in key_metrics if m in all_metrics[0]]
+            
+            # Create table
+            table_rows = len(all_metrics) + 1  # +1 for header
+            table_cols = len(available_metrics)
+            
+            # Adjust table size based on number of datasets
+            left = Inches(0.3)
+            top = Inches(1.1)
+            width = Inches(9.4)
+            height = Inches(6)
+            
+            table = slide.shapes.add_table(table_rows, table_cols, left, top, width, height).table
+            
+            # Header row
+            for col_idx, metric in enumerate(available_metrics):
+                metric_display = metric.replace('_', ' ').title()
+                if metric == 'filename':
+                    metric_display = 'Dataset'
+                table.cell(0, col_idx).text = metric_display
+                table.cell(0, col_idx).text_frame.paragraphs[0].font.bold = True
+                table.cell(0, col_idx).text_frame.paragraphs[0].font.size = Pt(10)
+            
+            # Data rows
+            for row_idx, metrics in enumerate(all_metrics):
+                for col_idx, metric in enumerate(available_metrics):
+                    value = metrics.get(metric, '')
+                    if metric == 'filename':
+                        # Shorten filename for display
+                        value = str(value)[:40] + '...' if len(str(value)) > 40 else str(value)
+                    else:
+                        try:
+                            float_val = float(value)
+                            value = f"{float_val:.2f}"
+                        except (ValueError, TypeError):
+                            value = str(value)
+                    
+                    table.cell(row_idx + 1, col_idx).text = value
+                    table.cell(row_idx + 1, col_idx).text_frame.paragraphs[0].font.size = Pt(9)
+                    
+        except Exception as e:
+            print(f"Could not add CSV table: {e}")
+    
+    # Save presentation
+    pptx_filename = os.path.join(session_dir, f"QA_Report_Combined_{datetime.now().strftime('%Y%m%d_%H%M%S')}.pptx")
+    prs.save(pptx_filename)
+    print(f"\nCombined PowerPoint created: {pptx_filename}")
+    
+    return pptx_filename
 
 if __name__ == "__main__":
-    # Location of data
-    # I usually setup my data with a main folder, e.g. fMRI_data_sub01
-    # Then inside this I have my fMRI data inside a subfolder fMRI_data_sub01/magnitude/
-    ##mypathname = '/Users/spmic/data/tw_testing_may_2025/'
-    ##pathname_m = mypathname + 'magnitude/'
-    ##extension = '.nii' #this can be .nii or .nii.gz
-
-    # Search pattern for filenames
-    ##filename_pattern = 'digitmap*'
-
-    mypathname = '/Users/cmilbourn/Documents/Sweet_Data/Development_Data/Sweet_Data_BIDS_Dev/sub001/sub001-visit001/'
-    pathname_m = mypathname + 'func/'
-    extension = '.nii.gz' #this can be .nii or .nii.gz
-
-    # Search pattern for filenames
-    filename_pattern = '*task-rest-bold'
+    # Define all dataset file paths from the table - exact filenames
+    all_files = [
+        # Philips datasets
+        '/Users/cmilbourn/Documents/BGI_Data/BGI_tSNR_fromSally/fMRI-test/nifti_converted/TR2_MB3_doubleecho_2_1_ws_map/TR2_MB3_doubleecho_2_1_ws_map',
+        '/Users/cmilbourn/Documents/BGI_Data/BGI_tSNR_fromSally/fMRI-test/nifti_converted/TR1p5_MB3_doubleecho_14_1_ws_map/TR1p5_MB3_doubleecho_14_1_ws_map',
+        '/Users/cmilbourn/Documents/BGI_Data/BGI_tSNR_fromSally/fMRI-test/nifti_converted/TR1p25_MB2_doubleecho_9_1_ws_map/TR1p25_MB2_doubleecho_9_1_ws_map',
+        '/Users/cmilbourn/Documents/BGI_Data/BGI_tSNR_fromSally/fMRI-test/nifti_converted/TR1_MB3_singe_echo_15_1/TR1_MB3_singe_echo_15_1',
+        '/Users/cmilbourn/Documents/BGI_Data/BGI_tSNR_fromSally/fMRI-test/nifti_converted/TR1p25_MB3_doubleecho_8_1_ws_map/TR1p25_MB3_doubleecho_8_1_ws_map',
+        '/Users/cmilbourn/Documents/BGI_Data/BGI_tSNR_fromSally/fMRI-test/nifti_converted/TR1p25_MB2_S1p8_11_1_ws_map/TR1p25_MB2_S1p8_11_1_ws_map',
+        '/Users/cmilbourn/Documents/BGI_Data/BGI_tSNR_fromSally/fMRI-test/nifti_converted/TR1p25_MB3_S1p8_10_1_ws_map/TR1p25_MB3_S1p8_10_1_ws_map',
+        '/Users/cmilbourn/Documents/BGI_Data/BGI_tSNR_fromSally/fMRI-test/nifti_converted/TR1p5_MB2_doubleecho_13_1_ws_map/TR1p5_MB2_doubleecho_13_1_ws_map',
+        # GE datasets - sub003 (multiple acquisitions)
+        '/Users/cmilbourn/Documents/Sweet_Data/Development_Data/sub003/sub003-visit001-ses001/func/sub003-visit001-ses001-Sweet_20250909_phase3_de-5-fmri_MB3_ARC2_fMRI_2mm_longerTR-20251009110105.nii.gz',
+        '/Users/cmilbourn/Documents/Sweet_Data/Development_Data/sub003/sub003-visit001-ses001/func/sub003-visit001-ses001-Sweet_20250909_phase3_de-6-fmri_MB3_ARC2_fMRI_2mm_ShortTR-20251009110105.nii.gz',
+        '/Users/cmilbourn/Documents/Sweet_Data/Development_Data/sub003/sub003-visit001-ses001/func/sub003-visit001-ses001-Sweet_20250909_phase3_de-8-fmri_MB3_ARC2_fMRI_2mm_LongTR-20251009110105.nii.gz',
+        # GE datasets - sub001 visit 1 (multiple acquisitions)
+        '/Users/cmilbourn/Documents/Sweet_Data/Development_Data/Sweet_Data_BIDS_Dev/sub001/sub001-visit001/func/sub001-visit001_3315-101_Sweet_02092025_20250902150849_4_fmri_MB3_ARC2_fMRI_2mm.nii.gz',
+        '/Users/cmilbourn/Documents/Sweet_Data/Development_Data/Sweet_Data_BIDS_Dev/sub001/sub001-visit001/func/sub001-visit001_3315-101_Sweet_02092025_20250902150849_6_fmri_MB3_ARC2_fMRI_2mm_LongTR.nii.gz',
+        '/Users/cmilbourn/Documents/Sweet_Data/Development_Data/Sweet_Data_BIDS_Dev/sub001/sub001-visit001/func/sub001-visit001_3315-101_Sweet_02092025_20250902150849_7_fmri_MB3_ARC2_fMRI_2mm_LongerTR.nii.gz',
+        # GE datasets - sub001 visit 2
+        '/Users/cmilbourn/Documents/Sweet_Data/Development_Data/Sweet_Data_BIDS_Dev/sub001/sub001-visit002/func/sub001-visit002-ses001-task-rest-bold-pre.nii.gz',
+        # BGI dataset - sub008
+        '/Users/cmilbourn/Documents/BGI_Data/BGI_Data_BIDS/sub008/sub008_visit001/func/sub008_visit001_ses00fasted_task-rest_bold.nii.gz',
+    ]
     
-    # Run the QA analysis
-    run_qa_single_path(mypathname, pathname_m, extension, filename_pattern)
+    # Check which files exist
+    existing_files = []
+    for fpath in all_files:
+        if os.path.exists(fpath):
+            existing_files.append(fpath)
+            print(f"Found: {os.path.basename(fpath)}")
+        else:
+            print(f"Path does not exist: {fpath}")
+    
+    all_files = existing_files
+    
+    if not all_files:
+        print("No files found to process!")
+        exit(1)
+    
+    print(f"\nTotal files to process: {len(all_files)}")
+    
+    # Create base output directory
+    base_output_dir = '/Users/cmilbourn/Documents/tSNR_check'
+    os.makedirs(base_output_dir, exist_ok=True)
+    
+    # Create a timestamped session directory
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    session_dir = os.path.join(base_output_dir, f'qa_session_{timestamp}')
+    os.makedirs(session_dir, exist_ok=True)
+    
+    # List to store all metrics and output directories
+    all_metrics = []
+    all_output_dirs = []
+    
+    # Process each file
+    for file_idx, mag_file_path in enumerate(all_files):
+        print(f"\n{'='*80}")
+        print(f"Processing file {file_idx + 1}/{len(all_files)}: {os.path.basename(mag_file_path)}")
+        print(f"{'='*80}")
+        
+        try:
+            # Extract a clean name for this dataset
+            core_filename = os.path.splitext(os.path.splitext(os.path.basename(mag_file_path))[0])[0]
+            pathname_m = os.path.dirname(mag_file_path)
+
+            print(f"Core filename: {core_filename}")
+
+            # Create an output directory for saving plots
+            output_directory = os.path.join(session_dir, f'{core_filename}')
+            os.makedirs(output_directory, exist_ok=True)
+            OUTPUT_DIR = os.path.abspath(output_directory)
+
+            print(f"Output directory: {OUTPUT_DIR}")
+            
+            # Remove first 2 dummy volumes using fslroi
+            mag_file_nodummies = os.path.join(OUTPUT_DIR, core_filename + '_nodummies.nii.gz')
+            print(f"Removing first 2 dummy volumes with fslroi...")
+            fslroi_cmd = f"fslroi {mag_file_path} {mag_file_nodummies} 2 -1"
+            result = subprocess.run(fslroi_cmd, shell=True, capture_output=True, text=True)
+            if result.returncode != 0:
+                print(f"Warning: fslroi failed: {result.stderr}")
+                print("Proceeding with original file...")
+                mag_file_to_use = mag_file_path
+            else:
+                print(f"Dummy volumes removed. Using: {mag_file_nodummies}")
+                mag_file_to_use = mag_file_nodummies
+            
+            # Load magnitude data only
+            print('Loading magnitude data...')
+            imgm_cla, imgm_cla_affine = load_data(mag_file_to_use)
+
+            # MASK
+            mask_path = find_mask_file(pathname_m)
+            if mask_path:
+                print(f"Found mask: {mask_path}")
+                mask_data, mask_affine = load_data(mask_path)
+            else:
+                print("No mask file found.")
+                mask_data = None
+            
+            # Process and plot data
+            metrics = process_data_nophase(imgm_cla, imgm_cla_affine, core_filename, OUTPUT_DIR, mask_data, nifti_path=mag_file_path)
+            all_metrics.append(metrics)
+            all_output_dirs.append(OUTPUT_DIR)
+            
+        except Exception as e:
+            print(f"ERROR processing {mag_file_path}: {e}")
+            import traceback
+            traceback.print_exc()
+            continue
+    
+    # Create combined PowerPoint presentation
+    print(f"\n{'='*80}")
+    print("Creating combined PowerPoint presentation...")
+    print(f"{'='*80}")
+    create_combined_powerpoint(session_dir, all_output_dirs, all_metrics)
+    
+    # Save combined metrics to CSV
+    if all_metrics:
+        csv_path = os.path.join(session_dir, f'qa_metrics_combined_{timestamp}.csv')
+        with open(csv_path, 'w', newline='') as csvfile:
+            fieldnames = all_metrics[0].keys()
+            writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
+            writer.writeheader()
+            for metrics in all_metrics:
+                writer.writerow(metrics)
+        print(f"\nCombined metrics CSV saved to: {csv_path}")
+    
+    print(f"\n{'='*80}")
+    print(f"COMPLETED! Processed {len(all_metrics)} datasets")
+    print(f"Output directory: {session_dir}")
+    print(f"{'='*80}")
