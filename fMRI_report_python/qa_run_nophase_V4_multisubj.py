@@ -201,11 +201,13 @@ def process_data_nophase(imgm_cla, imgm_affine, core_filename, output_dir, mask_
         ax.set_title(f"Slice {i}", fontsize=8)  # Smaller font size
         ax.axis('off')
     
-    # Add colorbar
-    fig.colorbar(im_list[0], ax=fig.axes, shrink=0.5, label='Intensity')
+    # Add colorbar on the right side
+    fig.subplots_adjust(right=0.90)
+    cbar_ax = fig.add_axes([0.92, 0.15, 0.02, 0.7])
+    fig.colorbar(im_list[0], cax=cbar_ax, label='Intensity')
     
     # Tighter layout
-    fig.tight_layout(pad=0.3)
+    fig.tight_layout(pad=0.3, rect=[0, 0, 0.90, 1])
     
     # Save output
     output_filename = 'mean_montage.png'
@@ -378,11 +380,13 @@ def process_data_nophase(imgm_cla, imgm_affine, core_filename, output_dir, mask_
         ax.set_title(f"Slice {i}")  # Set title with slice index
         ax.axis('off')  # Turn off axis labels and ticks
     
-    # Add colorbar
-    fig.colorbar(im_isnr, ax=fig.axes, shrink=0.5, label='iSNR')
+    # Add colorbar on the right side
+    fig.subplots_adjust(right=0.90)
+    cbar_ax = fig.add_axes([0.92, 0.15, 0.02, 0.7])
+    fig.colorbar(im_isnr, cax=cbar_ax, label='iSNR')
     
     # Adjust layout and spacing of subplots
-    fig.tight_layout(pad=0.5)
+    fig.tight_layout(pad=0.5, rect=[0, 0, 0.90, 1])
 
     # Save the montage as a PNG file
     output_filename = 'isnr_montage.png'
@@ -563,11 +567,13 @@ def process_data_nophase(imgm_cla, imgm_affine, core_filename, output_dir, mask_
         ax.set_title(f"Slice {i}", fontsize=8)  # Smaller font size
         ax.axis('off')
     
-    # Add colorbar
-    fig.colorbar(im_tsnr, ax=fig.axes, shrink=0.5, label='tSNR')
+    # Add colorbar on the right side
+    fig.subplots_adjust(right=0.90)
+    cbar_ax = fig.add_axes([0.92, 0.15, 0.02, 0.7])
+    fig.colorbar(im_tsnr, cax=cbar_ax, label='tSNR')
     
     # Tighter layout
-    fig.tight_layout(pad=0.3)
+    fig.tight_layout(pad=0.3, rect=[0, 0, 0.90, 1])
     
     # Save output
     output_filename = 'tSNR_montage.png'
