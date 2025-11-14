@@ -201,11 +201,17 @@ def process_data_nophase(imgm_cla, imgm_affine, core_filename, output_dir, mask_
     vmax = np.percentile(mean_img, 98)
     
     # Loop through slices
+    im_list = []
     for i in range(num_slices):
         ax = fig.add_subplot(rows, cols, i + 1)
-        ax.imshow(mean_img[:, :, i], cmap='gray', vmin=vmin, vmax=vmax)
+        im = ax.imshow(mean_img[:, :, i], cmap='gray', vmin=vmin, vmax=vmax)
+        if i == 0:
+            im_list.append(im)
         ax.set_title(f"Slice {i}", fontsize=8)  # Smaller font size
         ax.axis('off')
+    
+    # Add colorbar
+    fig.colorbar(im_list[0], ax=fig.axes, shrink=0.5, label='Intensity')
     
     # Tighter layout
     fig.tight_layout(pad=0.3)
@@ -213,12 +219,6 @@ def process_data_nophase(imgm_cla, imgm_affine, core_filename, output_dir, mask_
     # Save output
     output_filename = 'mean_montage.png'
     output_path = f"{output_dir}/{output_filename}"
-    try:
-        from matplotlib_scalebar.scalebar import ScaleBar
-        scalebar = ScaleBar(2, 'mm', length_fraction=0.15, location='lower right', box_alpha=0.5, color='white')
-        fig.axes[0].add_artist(scalebar)  # montage
-    except ImportError:
-        print('matplotlib_scalebar not installed, skipping scale bar.')
     plt.savefig(output_path, dpi=300, bbox_inches='tight')
 
     ############################## iSNR
@@ -308,45 +308,43 @@ def process_data_nophase(imgm_cla, imgm_affine, core_filename, output_dir, mask_
     
     # Create a figure for the montage
     fig = plt.figure(figsize=(15, 15))  # Adjust figure size
+    im_noise = None
     for i in range(num_slices):
         ax = fig.add_subplot(rows, cols, i + 1)  # Create subplot for each slice
-        ax.imshow(noise_volume[:, :, i], cmap='gray', clim=(0, 2000))  # Display slice
+        im = ax.imshow(noise_volume[:, :, i], cmap='gray', clim=(0, 2000))  # Display slice
+        if i == 0:
+            im_noise = im
         ax.set_title(f"Slice {i}")  # Label each slice
         ax.axis('off')  # Hide axes
+    # Add colorbar
+    fig.colorbar(im_noise, ax=fig.axes, shrink=0.5, label='Intensity')
     # Adjust layout
     fig.tight_layout(pad=0.5)
     ## plt.show()  # Disabled for script mode
     # Save the montage
     output_filename = 'noise_volume_montage.png'
     output_path = f"{output_dir}/{output_filename}"
-    try:
-        from matplotlib_scalebar.scalebar import ScaleBar
-        scalebar = ScaleBar(2, 'mm', length_fraction=0.15, location='lower right', box_alpha=0.5, color='white')
-        fig.axes[0].add_artist(scalebar)  # montage
-    except ImportError:
-        print('matplotlib_scalebar not installed, skipping scale bar.')
     plt.savefig(output_path, dpi=300)
     #plt.close()  # Free memory
 
     # Create a figure for the montage
     fig = plt.figure(figsize=(15, 15))  # Adjust figure size
+    im_masked_noise = None
     for i in range(num_slices):
         ax = fig.add_subplot(rows, cols, i + 1)  # Create subplot for each slice
-        ax.imshow(masked_noise[:, :, i], cmap='gray', clim=(0, 2000))  # Display slice
+        im = ax.imshow(masked_noise[:, :, i], cmap='gray', clim=(0, 2000))  # Display slice
+        if i == 0:
+            im_masked_noise = im
         ax.set_title(f"Slice {i}")  # Label each slice
         ax.axis('off')  # Hide axes
+    # Add colorbar
+    fig.colorbar(im_masked_noise, ax=fig.axes, shrink=0.5, label='Intensity')
     # Adjust layout
     fig.tight_layout(pad=0.5)
     ## plt.show()  # Disabled for script mode
     # Save the montage
     output_filename = 'masked_noise_volume_montage.png'
     output_path = f"{output_dir}/{output_filename}"
-    try:
-        from matplotlib_scalebar.scalebar import ScaleBar
-        scalebar = ScaleBar(2, 'mm', length_fraction=0.15, location='lower right', box_alpha=0.5, color='white')
-        fig.axes[0].add_artist(scalebar)  # montage
-    except ImportError:
-        print('matplotlib_scalebar not installed, skipping scale bar.')
     plt.savefig(output_path, dpi=300)
     #plt.close()  # Free memory
 
@@ -396,13 +394,19 @@ def process_data_nophase(imgm_cla, imgm_affine, core_filename, output_dir, mask_
 
     # iSNR MONTAGE
     fig = plt.figure(figsize=(10, 10))  # Adjust figsize as needed
+    im_isnr = None
     for i in range(isnr_obj_cla.isnr_map.shape[2]):
         # Create a subplot for the current slice
         ax = fig.add_subplot(rows, cols, i + 1)  # i+1 because subplot indices start from 1
         # Display the current slice using imshow
-        ax.imshow(isnr_obj_cla.isnr_map[:, :, i, time_point], cmap='inferno', clim=(0, isnrScale))  # Adjust colormap as needed
+        im = ax.imshow(isnr_obj_cla.isnr_map[:, :, i, time_point], cmap='inferno', clim=(0, isnrScale))  # Adjust colormap as needed
+        if i == 0:
+            im_isnr = im
         ax.set_title(f"Slice {i}")  # Set title with slice index
         ax.axis('off')  # Turn off axis labels and ticks
+    
+    # Add colorbar
+    fig.colorbar(im_isnr, ax=fig.axes, shrink=0.5, label='iSNR')
     
     # Adjust layout and spacing of subplots
     fig.tight_layout(pad=0.5)
@@ -410,12 +414,6 @@ def process_data_nophase(imgm_cla, imgm_affine, core_filename, output_dir, mask_
     # Save the montage as a PNG file
     output_filename = 'isnr_montage.png'
     output_path = f"{output_dir}/{output_filename}"
-    try:
-        from matplotlib_scalebar.scalebar import ScaleBar
-        scalebar = ScaleBar(2, 'mm', length_fraction=0.15, location='lower right', box_alpha=0.5, color='white')
-        fig.axes[0].add_artist(scalebar)  # montage
-    except ImportError:
-        print('matplotlib_scalebar not installed, skipping scale bar.')
     plt.savefig(output_path, dpi=300)  # Save the montage as a PNG file with 300 dpi resolution
 
     ############################## tSNR
@@ -601,11 +599,17 @@ def process_data_nophase(imgm_cla, imgm_affine, core_filename, output_dir, mask_
     fig = plt.figure(figsize=(cols * figsize_scale, rows * figsize_scale))
     
     # Loop through slices
+    im_tsnr = None
     for i in range(num_slices):
         ax = fig.add_subplot(rows, cols, i + 1)
-        ax.imshow(tsnr_obj_cla.tsnr_map[:, :, i], cmap='inferno', clim=(0, tsnrScale))
+        im = ax.imshow(tsnr_obj_cla.tsnr_map[:, :, i], cmap='inferno', clim=(0, tsnrScale))
+        if i == 0:
+            im_tsnr = im
         ax.set_title(f"Slice {i}", fontsize=8)  # Smaller font size
         ax.axis('off')
+    
+    # Add colorbar
+    fig.colorbar(im_tsnr, ax=fig.axes, shrink=0.5, label='tSNR')
     
     # Tighter layout
     fig.tight_layout(pad=0.3)
@@ -870,10 +874,15 @@ def create_qa_powerpoint(output_dir, subject_name="QA Analysis"):
     
     return pptx_filename
 
-def run_qa_single_path(mypathname, pathname_m, extension, filename_pattern):
+def run_qa_single_path(mypathname, pathname_m, extension, filename_pattern, base_output_dir='/Users/cmilbourn/Documents/tSNR_check'):
     """
     Run QA analysis for a single path configuration
     This function contains the main processing logic that was previously in __main__
+    
+    Parameters:
+    -----------
+    base_output_dir : str
+        Base directory for all QA outputs (default: /Users/cmilbourn/Documents/tSNR_check)
     """
     core_filenames = set(
         os.path.splitext(os.path.splitext(os.path.basename(file_path))[0])[0]  # Handle double extensions
@@ -883,6 +892,9 @@ def run_qa_single_path(mypathname, pathname_m, extension, filename_pattern):
     print("Files found:", glob(os.path.join(pathname_m, filename_pattern + extension)))
     print("Core filenames:", core_filenames)
     print("Now beginning loop")
+    
+    # Create base output directory if it doesn't exist
+    os.makedirs(base_output_dir, exist_ok=True)
     
     # List to store all metrics
     all_metrics = []
@@ -894,7 +906,7 @@ def run_qa_single_path(mypathname, pathname_m, extension, filename_pattern):
 
         # Create an output directory for saving plots with timestamp
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-        output_directory = mypathname + f'qa_output_{core_filename}_{timestamp}'
+        output_directory = os.path.join(base_output_dir, f'qa_output_{core_filename}_{timestamp}')
         os.makedirs(output_directory, exist_ok=True)
         OUTPUT_DIR = os.path.abspath(output_directory)
 
@@ -952,7 +964,7 @@ def run_qa_single_path(mypathname, pathname_m, extension, filename_pattern):
     if all_metrics:
         # Use the first filename for the CSV name (or combine if multiple files)
         first_filename = list(core_filenames)[0] if len(core_filenames) == 1 else 'multiple_files'
-        csv_path = os.path.join(mypathname, f'qa_metrics_{first_filename}_{datetime.now().strftime("%Y%m%d_%H%M%S")}.csv')
+        csv_path = os.path.join(base_output_dir, f'qa_metrics_{first_filename}_{datetime.now().strftime("%Y%m%d_%H%M%S")}.csv')
         with open(csv_path, 'w', newline='') as csvfile:
             fieldnames = all_metrics[0].keys()
             writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
