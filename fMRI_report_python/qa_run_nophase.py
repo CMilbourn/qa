@@ -33,7 +33,7 @@
 import sys
 sys.path.append('/Users/cmilbourn/Documents/GitHub/qa/')  # ** change line to match code folder location **
 print(sys.path)
-
+# run path python '/Users/cmilbourn/Documents/GitHub/qa/qa_run_nophase.py' 
 import os
 import numpy as np
 import matplotlib

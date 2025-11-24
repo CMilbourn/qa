@@ -1,7 +1,8 @@
 #!/usr/bin/env python
 # coding: utf-8
 # qa_run_nophase.py based on qa_run_nophase.ipynb  
-
+# example run line: python qa_run_nophase_V7_multisubj_MASK.py
+#reorder_qa_pptx_by_type.py
 # # Quality Assurance (QA) Python Version
 # 
 # This notebook gives example uses of image based QA metrics in `qa`.
@@ -47,6 +48,7 @@ import subprocess
 import json
 import csv
 from datetime import datetime
+import argparse
 try:
     from pptx import Presentation
     from pptx.util import Inches, Pt
@@ -79,9 +81,16 @@ def load_data(inputdatafilename):
 
 # Function to find a file containing "mask" in its name
 def find_mask_file(directory):
+    # First, try to find files with "brain_mask" in the name (BET output)
+    for filename in os.listdir(directory):
+        if "brain_mask" in filename.lower() and filename.endswith(('.nii', '.nii.gz')):
+            return os.path.join(directory, filename)
+    
+    # If no brain_mask found, look for any file with "mask" in the name
     for filename in os.listdir(directory):
         if "mask" in filename.lower() and filename.endswith(('.nii', '.nii.gz')):
             return os.path.join(directory, filename)
+    
     return None
 
 # Function to read TR from BIDS JSON sidecar file
@@ -997,6 +1006,22 @@ def run_qa_multi_datasets(base_data_dir, extension='.nii.gz', filename_pattern='
     # List to store all metrics and output directories
     all_metrics = []
     all_output_dirs = []
+    # Tracking arrays for per-file mask handling (initialized in main scope)
+    created_masks = []            # masks found pre-existing with expected naming
+    generated_masks = []          # masks created via BET during this run
+    missing_mask_failures = []    # datasets where mask creation or loading failed
+    # Tracking arrays for mask handling (main scope)
+    created_masks = []
+    generated_masks = []
+    missing_mask_failures = []
+    # Tracking for mask handling (defined in main scope)
+    created_masks = []          # existing masks matching filename
+    generated_masks = []        # masks generated via BET
+    missing_mask_failures = []  # datasets where BET failed or mask load failed
+    # Track mask usage/creation
+    created_masks = []          # masks found and used
+    generated_masks = []        # masks generated via BET
+    missing_mask_failures = []  # datasets where BET failed
     
     # Process each file
     for file_idx, mag_file_path in enumerate(all_files):
@@ -1263,11 +1288,9 @@ def create_combined_powerpoint(session_dir, all_output_dirs, all_metrics):
     return pptx_filename
 
 if __name__ == "__main__":
-    # Define all 16 dataset file paths with optional TR overrides
-    # First 8 files: TR will be read from .json files
-    # Last 8 files: TR specified manually from the table
+    # All datasets to process in one go
     dataset_configs = [
-        # Files 1-7: Sweet Data 2mm and 3mm (faster to process)
+        # Sweet Data 2mm and 3mm
         { 'path': '/Users/cmilbourn/Documents/Sweet_Data/Development_Data/Sweet_Data_BIDS_Dev/sub001/sub001-visit001/func/sub001-visit001_3315-101_Sweet_02092025_20250902150849_7_fmri_MB3_ARC2_fMRI_2mm_1.5.nii.gz' },
         { 'path': '/Users/cmilbourn/Documents/Sweet_Data/Development_Data/Sweet_Data_BIDS_Dev/sub001/sub001-visit001/func/sub001-visit001_3315-101_Sweet_02092025_20250902150849_4_fmri_MB3_ARC2_fMRI_2mm.nii.gz' },
         { 'path': '/Users/cmilbourn/Documents/Sweet_Data/Development_Data/Sweet_Data_BIDS_Dev/sub001/sub001-visit002/func/sub001-visit002-ses001-task-rest-bold-pre.nii.gz' },
@@ -1276,7 +1299,7 @@ if __name__ == "__main__":
         { 'path': '/Users/cmilbourn/Documents/Sweet_Data/Development_Data/sub003/sub003-visit001-ses001/func/sub003-visit001-ses001-Sweet_20250909_phase3_de-5-fmri_MB3_ARC2_fMRI_2mm_longerTR-20251009110105.nii.gz' },
         { 'path': '/Users/cmilbourn/Documents/Sweet_Data/Development_Data/sub003/sub003-visit001-ses001/func/sub003-visit001-ses001-Sweet_20250909_phase3_de-2-fmri_MB3_ARC2_fMRI_2mm_pre-20251009110105.nii.gz' },
         
-        # Files 8-15: BGI Data with manual TR values from the table
+        # BGI Data with manual TR values
         { 'path': '/Users/cmilbourn/Documents/BGI_Data/BGI_tSNR_fromSally/fMRI-test/nifti_converted/TR1_MB3_single_echo_15_1.nii.gz', 'TR': 1.0 },
         { 'path': '/Users/cmilbourn/Documents/BGI_Data/BGI_tSNR_fromSally/fMRI-test/nifti_converted/TR1p5_MB2_doublecho_13_1_ws_map.nii.gz', 'TR': 1.5 },
         { 'path': '/Users/cmilbourn/Documents/BGI_Data/BGI_tSNR_fromSally/fMRI-test/nifti_converted/TR1p5_MB3_doublecho_14_1_ws_map.nii.gz', 'TR': 1.5 },
@@ -1286,7 +1309,14 @@ if __name__ == "__main__":
         { 'path': '/Users/cmilbourn/Documents/BGI_Data/BGI_tSNR_fromSally/fMRI-test/nifti_converted/TR1p25_MB3_S1p8_10_1_ws_map.nii.gz', 'TR': 1.25 },
         { 'path': '/Users/cmilbourn/Documents/BGI_Data/BGI_tSNR_fromSally/fMRI-test/nifti_converted/TR2_MB3_doublecho_2_1_ws_map.nii.gz', 'TR': 2.0 },
         
-        # File 16: 1.5mm iso (largest, process last)
+        # ASL and additional BOLD datasets
+        { 'path': '/Users/cmilbourn/Documents/PhD_GE_Data/sub14_task-normo_asl.nii.gz' },
+        { 'path': '/Users/cmilbourn/Documents/Sweet_Data/Development_Data/Sweet_Data_BIDS_Dev/sub001/sub001-visit002/perf/sub001-visit002-ses001-task-rest-asl-pre.nii.gz' },
+        { 'path': '/Users/cmilbourn/Documents/Sweet_Data/Development_Data/Sweet_Data_BIDS_Dev/sub001/sub001-visit001/perf/sub001-visit001-ses001-task-rest-asl.nii.gz' },
+        { 'path': '/Users/cmilbourn/Documents/PhD_GE_Data/sub14_task-hyper_run-1_bold.nii.gz' },
+        { 'path': '/Users/cmilbourn/Documents/Sweet_Data/Development_Data/Sweet_Data_BIDS_Dev/sub001/sub001-visit003/func/sub001-visit003-ses001-task-rest-bold-pre.nii.gz' },
+        
+        # 1.5mm iso (largest, process last)
         { 'path': '/Users/cmilbourn/Documents/Sweet_Data/Development_Data/Sweet_Data_BIDS_Dev/sub001/sub001-visit001/func/sub001-visit001_3315-101_Sweet_02092025_20250902150849_11_fmri_MB3_ARC2_fMRI_1.5_mm_iso.nii.gz' },
     ]
 
@@ -1322,6 +1352,11 @@ if __name__ == "__main__":
     # List to store all metrics and output directories
     all_metrics = []
     all_output_dirs = []
+    
+    # Tracking arrays for per-file mask handling
+    created_masks = []            # masks found pre-existing with expected naming
+    generated_masks = []          # masks created via BET during this run
+    missing_mask_failures = []    # datasets where mask creation or loading failed
     
     # Process each file
     for file_idx, cfg in enumerate(dataset_configs):
@@ -1364,14 +1399,57 @@ if __name__ == "__main__":
             print('Loading magnitude data...')
             imgm_cla, imgm_cla_affine = load_data(mag_file_to_use)
 
-            # MASK
-            mask_path = find_mask_file(pathname_m)
-            if mask_path:
-                print(f"Found mask: {mask_path}")
-                mask_data, mask_affine = load_data(mask_path)
+            # MASK HANDLING (per-dataset) -------------------------------------------------
+            # Expect mask to match input file name with _brain_mask appended before extension
+            if mag_file_path.endswith('.nii.gz'):
+                expected_mask = mag_file_path.replace('.nii.gz', '_brain_mask.nii.gz')
+            elif mag_file_path.endswith('.nii'):
+                expected_mask = mag_file_path.replace('.nii', '_brain_mask.nii.gz')
             else:
-                print("No mask file found.")
-                mask_data = None
+                expected_mask = mag_file_path + '_brain_mask.nii.gz'
+
+            if os.path.exists(expected_mask):
+                print(f"Using existing per-file mask: {expected_mask}")
+                try:
+                    mask_data, mask_affine = load_data(expected_mask)
+                    created_masks.append(expected_mask)
+                except Exception as me:
+                    print(f"Warning: could not load existing mask {expected_mask}: {me}")
+                    mask_data = None
+            else:
+                # Create mask with BET (brain extraction); generate a temporary output stem
+                print(f"No matching mask found. Creating mask with BET for {core_filename} ...")
+                bet_output_stem = os.path.join(OUTPUT_DIR, core_filename + '_brain')  # BET will append .nii.gz and _mask
+                bet_cmd = f"${{FSLDIR}}/bin/bet {mag_file_to_use} {bet_output_stem} -f 0.5 -m"
+                bet_res = subprocess.run(bet_cmd, shell=True, capture_output=True, text=True)
+                if bet_res.returncode != 0:
+                    print(f"BET failed for {core_filename}: {bet_res.stderr}")
+                    mask_data = None
+                    missing_mask_failures.append(core_filename)
+                else:
+                    # BET generates bet_output_stem.nii.gz and bet_output_stem_mask.nii.gz
+                    generated_mask_source = bet_output_stem + '_mask.nii.gz'
+                    if os.path.exists(generated_mask_source):
+                        try:
+                            # Rename/copy to expected_mask for consistency if paths differ
+                            if generated_mask_source != expected_mask:
+                                try:
+                                    # Copy rather than move to keep original for debugging
+                                    import shutil
+                                    shutil.copy2(generated_mask_source, expected_mask)
+                                except Exception as ce:
+                                    print(f"Warning: could not copy mask to expected name: {ce}")
+                            mask_data, mask_affine = load_data(generated_mask_source)
+                            generated_masks.append(generated_mask_source)
+                            print(f"Mask generated: {generated_mask_source}")
+                        except Exception as me:
+                            print(f"Warning: generated mask could not be loaded {generated_mask_source}: {me}")
+                            mask_data = None
+                            missing_mask_failures.append(core_filename)
+                    else:
+                        print(f"BET reported success but mask file missing: {generated_mask_source}")
+                        mask_data = None
+                        missing_mask_failures.append(core_filename)
             
             # Process and plot data
             metrics = process_data_nophase(imgm_cla, imgm_cla_affine, core_filename, OUTPUT_DIR, mask_data, TR=tr_override, nifti_path=mag_file_path)
@@ -1400,6 +1478,17 @@ if __name__ == "__main__":
             for metrics in all_metrics:
                 writer.writerow(metrics)
         print(f"\nCombined metrics CSV saved to: {csv_path}")
+
+    # Summary of mask handling
+    print("\nMask processing summary:")
+    print(f"  Existing masks used: {len(created_masks)}")
+    print(f"  Masks generated via BET: {len(generated_masks)}")
+    if missing_mask_failures:
+        print(f"  Datasets with mask creation failures: {len(missing_mask_failures)}")
+        for fail in missing_mask_failures:
+            print(f"    - {fail}")
+    else:
+        print("  No mask creation failures.")
     
     print(f"\n{'='*80}")
     print(f"COMPLETED! Processed {len(all_metrics)} datasets")
