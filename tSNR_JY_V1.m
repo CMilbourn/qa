@@ -4,8 +4,6 @@
 % 1. Load the NIfTI data
 % set up SPM install
 
-
-
 % Load the SPM analysis
 addpath('/Applications/spm/')
 spm('Defaults', 'FMRI');
@@ -42,7 +40,8 @@ tsnr_map(isinf(tsnr_map)) = 0;
 % 3. Save the tSNR map as a .nii file using SPM functions (Method B)
 
 %output_tsnr_filename = 'tsnr_map_swrTASK_fMRI.nii';
-output_tsnr_filename = '/Users/cmilbourn/Documents/Sweet_Data/Development_Data/Sweet_Data_BIDS_Dev/derivatives/tsnr_maps/sub003/sub003-visit001-ses001/func/sub003-visit001-ses001-Sweet_20250909_phase3_de-2-fmri_MB3_ARC2_fMRI_2mm_pre-20251009110105_tsnr.nii';
+%output_tsnr_filename = '/Users/cmilbourn/Documents/Sweet_Data/Development_Data/Sweet_Data_BIDS_Dev/derivatives/tsnr_maps/sub003/sub003-visit001-ses001/func/sub003-visit001-ses001-Sweet_20250909_phase3_de-2-fmri_MB3_ARC2_fMRI_2mm_pre-20251009110105_tsnr.nii';
+output_tsnr_filename = '/Users/cmilbourn/Documents/Sweet_Data/Development_Data/Sweet_Data_BIDS_Dev/derivatives/sub003-visit001-ses001-Sweet_20250909_phase3_de-2-fmri_MB3_ARC2_fMRI_2mm_pre-20251009110105_tsnr.nii';
 
 disp('Saving tSNR map using SPM functions...');
 
