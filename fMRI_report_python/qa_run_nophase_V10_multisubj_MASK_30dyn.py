@@ -1473,47 +1473,34 @@ def create_combined_powerpoint(session_dir, all_output_dirs, all_metrics):
     return pptx_filename
 
 if __name__ == "__main__":
-    # All datasets to process - 30 dynamics preprocessed files
+    # Explicit dataset list (run even if 3D/short)
     dataset_configs = [
-        # MB3 GE TR 1.4 group
-        { 'path': '/Users/cmilbourn/Documents/tSNR_check_30dyn/Data2run/preprocessed/sub14_task-hyper_run-1_bold_nodummies_30dyn.nii.gz', 'TR': 1.4 },
-        { 'path': '/Users/cmilbourn/Documents/tSNR_check_30dyn/Data2run/preprocessed/sub001-visit001_3315-101_Sweet_02092025_20250902150849_4_fmri_MB3_ARC2_fMRI_2mm_nodummies_30dyn.nii.gz', 'TR': 1.4 },
-        { 'path': '/Users/cmilbourn/Documents/tSNR_check_30dyn/Data2run/preprocessed/sub001-visit002-ses001-task-rest-bold-pre_nodummies_30dyn.nii.gz', 'TR': 1.4 },
-        { 'path': '/Users/cmilbourn/Documents/tSNR_check_30dyn/Data2run/preprocessed/sub001-visit003-ses001-task-rest-bold-pre_nodummies_30dyn.nii.gz', 'TR': 1.4 },
-        { 'path': '/Users/cmilbourn/Documents/tSNR_check_30dyn/Data2run/preprocessed/sub003-visit001-ses001-Sweet_20250909_phase3_de-2-fmri_MB3_ARC2_fMRI_2mm_pre-20251009110105_nodummies_30dyn.nii.gz', 'TR': 1.4 },
-        { 'path': '/Users/cmilbourn/Documents/tSNR_check_30dyn/Data2run/preprocessed/Sub004-visit001-ses001_A_Sweet_20250604_dev_20251125114539_12_tr1.4_fmri_MB3_ARC2_fMRI_2mm_nodummies_30dyn.nii.gz', 'TR': 1.4 },
-        { 'path': '/Users/cmilbourn/Documents/tSNR_check_30dyn/Data2run/preprocessed/Sub004-visit001-ses001_A_Sweet_20250604_dev_20251125114539_3_fmri_MB3_ARC2_fMRI_2mm_nodummies_30dyn.nii.gz', 'TR': 1.4 },
-        { 'path': '/Users/cmilbourn/Documents/tSNR_check_30dyn/Data2run/preprocessed/Sub004-visit001-ses001_A_Sweet_20250604_dev_20251125114539_8_2.5mmisofmri_MB3_ARC2_fMRI_2mm_nodummies_30dyn.nii.gz', 'TR': 1.4 },
-        { 'path': '/Users/cmilbourn/Documents/tSNR_check_30dyn/Data2run/preprocessed/sub003-visit001-ses001-Sweet_20250909_phase3_de-8-fmri_MB3_ARC2_fMRI_3mm-20251009110105_nodummies_30dyn.nii.gz', 'TR': 1.4 },
-        # MB3 GE TR 2.0 group
-        { 'path': '/Users/cmilbourn/Documents/tSNR_check_30dyn/Data2run/preprocessed/sub001-visit001_3315-101_Sweet_02092025_20250902150849_7_fmri_MB3_ARC2_fMRI_2mm_1.5_nodummies_30dyn.nii.gz', 'TR': 2.0 },
-        { 'path': '/Users/cmilbourn/Documents/tSNR_check_30dyn/Data2run/preprocessed/sub003-visit001-ses001-Sweet_20250909_phase3_de-5-fmri_MB3_ARC2_fMRI_2mm_longerTR-20251009110105_nodummies_30dyn.nii.gz', 'TR': 2.0 },
-        { 'path': '/Users/cmilbourn/Documents/tSNR_check_30dyn/Data2run/preprocessed/Sub004-visit001-ses001_A_Sweet_20250604_dev_20251125114539_9_2mmiso_TR2_fmri_MB3_ARC2_fMRI_nodummies_30dyn.nii.gz', 'TR': 2.0 },
-        { 'path': '/Users/cmilbourn/Documents/tSNR_check_30dyn/Data2run/preprocessed/Sub004-visit001-ses001_A_Sweet_20250604_dev_20251125114539_14_tr2_fmri_MB3_ARC2_fMRI_2mm_nodummies_30dyn.nii.gz', 'TR': 2.0 },
-        # MB3 GE TR >2.0 group
-        { 'path': '/Users/cmilbourn/Documents/tSNR_check_30dyn/Data2run/preprocessed/sub001-visit001_3315-101_Sweet_02092025_20250902150849_11_fmri_MB3_ARC2_fMRI_1.5_mm_iso_nodummies_30dyn.nii.gz', 'TR': 2.2 },
-        { 'path': '/Users/cmilbourn/Documents/tSNR_check_30dyn/Data2run/preprocessed/Sub004-visit001-ses001_A_Sweet_20250604_dev_20251125114539_5_TR2.5_fmri_MB3_ARC2_fMRI_2mm_nodummies_30dyn.nii.gz', 'TR': 2.5 },
-        { 'path': '/Users/cmilbourn/Documents/tSNR_check_30dyn/Data2run/preprocessed/Sub004-visit001-ses001_A_Sweet_20250604_dev_20251125114539_13_tr2.5_fmri_MB3_ARC2_fMRI_2mm_nodummies_30dyn.nii.gz', 'TR': 2.5 },
-        { 'path': '/Users/cmilbourn/Documents/tSNR_check_30dyn/Data2run/preprocessed/Sub004-visit001-ses001_A_Sweet_20250604_dev_20251125114539_7_PAPER_fmri_MB3_ARC2_fMRI_2mm_nodummies_30dyn.nii.gz', 'TR': 2.26 },
-        # MB3 Ingenia group
-        { 'path': '/Users/cmilbourn/Documents/tSNR_check_30dyn/Data2run/preprocessed/TR1_MB3_single_echo_15_1.nii.gz', 'TR': 1.0 },
-        { 'path': '/Users/cmilbourn/Documents/tSNR_check_30dyn/Data2run/preprocessed/TR1p25_MB3_S1p8_10_1_ws_map.nii.gz', 'TR': 1.25 },
-        # MB2 GE group
-        { 'path': '/Users/cmilbourn/Documents/tSNR_check_30dyn/Data2run/preprocessed/Sub004-visit001-ses001_A_Sweet_20250604_dev_20251125114539_4_fmri_MB2_ARC2_fMRI_2mm_nodummies_30dyn.nii.gz', 'TR': 1.996 },
-        { 'path': '/Users/cmilbourn/Documents/tSNR_check_30dyn/Data2run/preprocessed/Sub004-visit001-ses001_A_Sweet_20250604_dev_20251125114539_10_2mmiso_TR2_fmri_MB2_ARC2_fMRI_nodummies_30dyn.nii.gz', 'TR': 2.0 },
-        { 'path': '/Users/cmilbourn/Documents/tSNR_check_30dyn/Data2run/preprocessed/sub003-visit001-ses001-Sweet_20250909_phase3_de-9-fmri_MB2_ARC2_fMRI_2mm_pre-20251009110105_nodummies_30dyn.nii.gz', 'TR': 2.026 },
-        { 'path': '/Users/cmilbourn/Documents/tSNR_check_30dyn/Data2run/preprocessed/Sub004-visit001-ses001_A_Sweet_20250604_dev_20251125114539_6_TR2.5_fmri_MB2_ARC2_fMRI_2mm_nodummies_30dyn.nii.gz', 'TR': 2.5 },
-        # MB2 Ingenia group
-        { 'path': '/Users/cmilbourn/Documents/tSNR_check_30dyn/Data2run/preprocessed/TR1p25_MB2_S1p8_11_1_ws_map.nii.gz', 'TR': 1.25 },
-        # MB1 group
-        { 'path': '/Users/cmilbourn/Documents/tSNR_check_30dyn/Data2run/preprocessed/Sub004-visit001-ses001_A_Sweet_20250604_dev_20251125114539_11_MB1_TASK_fMRI_TR2000_1_nodummies_30dyn.nii.gz', 'TR': 2.0 },
-        # ASL group
-        { 'path': '/Users/cmilbourn/Documents/tSNR_check_30dyn/Data2run/preprocessed/sub14_task-normo_asl_nodummies_30dyn.nii.gz', 'TR': 8.546 },
-        { 'path': '/Users/cmilbourn/Documents/tSNR_check_30dyn/Data2run/preprocessed/sub001-visit002-ses001-task-rest-asl-pre_nodummies_30dyn.nii.gz', 'TR': 6.137 },
-        { 'path': '/Users/cmilbourn/Documents/tSNR_check_30dyn/Data2run/preprocessed/sub001-visit001-ses001-task-rest-asl_nodummies_30dyn.nii.gz', 'TR': 6.164 },
-        # Missing from list but in preprocessed folder
-        { 'path': '/Users/cmilbourn/Documents/tSNR_check_30dyn/Data2run/preprocessed/sub001-visit001-ses001-task-rest-bold_nodummies_30dyn.nii.gz', 'TR': 1.4 },
+        {
+            'path': '/Users/cmilbourn/Documents/tSNR_check_30dyn/Data2run/rawish/sub005/sub005-visit001_17976-012_fmri_MB1_ARC2_fMRI_2mm_Sweet_20251125_bold_dev_20251216143719_5.nii.gz',
+            'TR': None
+        }
     ]
+
+    # ------------------------------------------------------------------
+    # Previous auto-discovery block (kept for reference, now disabled)
+    # ------------------------------------------------------------------
+    # target_dir = '/Users/cmilbourn/Documents/tSNR_check_30dyn/Data2run/rawish/sub005'
+    # candidate_files = sorted(glob(os.path.join(target_dir, '*.nii*')))
+    # dataset_configs = []
+    #
+    # for fpath in candidate_files:
+    #     if not fpath.endswith(('.nii', '.nii.gz')):
+    #         continue
+    #     try:
+    #         img = nib.load(fpath)
+    #         # Only keep 4D datasets with at least 10 volumes (exclude anatomical/localizer)
+    #         if img.ndim < 4 or img.shape[-1] < 10:
+    #             print(f"Skipping (not 4D or too few volumes): {os.path.basename(fpath)} shape={img.shape}")
+    #             continue
+    #     except Exception as e:
+    #         print(f"Skipping (load error) {fpath}: {e}")
+    #         continue
+    #     dataset_configs.append({ 'path': fpath, 'TR': None })
 
 
     # Check which files exist
@@ -1580,18 +1567,56 @@ if __name__ == "__main__":
             if tr_override is not None:
                 print(f"Using TR override = {tr_override}s for this dataset")
             
-            # Remove first 2 dummy volumes using fslroi
-            mag_file_nodummies = os.path.join(OUTPUT_DIR, core_filename + '_nodummies.nii.gz')
-            print(f"Removing first 2 dummy volumes with fslroi...")
-            fslroi_cmd = f"fslroi {mag_file_path} {mag_file_nodummies} 2 -1"
-            result = subprocess.run(fslroi_cmd, shell=True, capture_output=True, text=True)
-            if result.returncode != 0:
-                print(f"Warning: fslroi failed: {result.stderr}")
-                print("Proceeding with original file...")
-                mag_file_to_use = mag_file_path
+            # Remove first 2 dummy volumes using fslroi (only if 4D with >=3 volumes)
+            mag_file_to_use = mag_file_path
+            try:
+                _hdr_probe = nib.load(mag_file_path)
+                is_4d = (_hdr_probe.ndim == 4)
+                t_len = _hdr_probe.shape[-1] if is_4d else 1
+            except Exception as e:
+                print(f"Warning: could not probe NIfTI header, skipping dummy removal: {e}")
+                is_4d = False
+                t_len = 1
+
+            if is_4d and t_len >= 3:
+                mag_file_nodummies = os.path.join(OUTPUT_DIR, core_filename + '_nodummies.nii.gz')
+                print(f"Removing first 2 dummy volumes with fslroi...")
+                fslroi_cmd = f"fslroi {mag_file_path} {mag_file_nodummies} 2 -1"
+                result = subprocess.run(fslroi_cmd, shell=True, capture_output=True, text=True)
+                if result.returncode != 0 or (not os.path.exists(mag_file_nodummies)):
+                    print(f"Warning: fslroi failed or output missing: {result.stderr}")
+                    print("Proceeding with original file...")
+                    mag_file_to_use = mag_file_path
+                else:
+                    print(f"Dummy volumes removed. Using: {mag_file_nodummies}")
+                    mag_file_to_use = mag_file_nodummies
             else:
-                print(f"Dummy volumes removed. Using: {mag_file_nodummies}")
-                mag_file_to_use = mag_file_nodummies
+                print(f"Skipping dummy removal (not 4D or too few timepoints: ndim={4 if is_4d else 3}, t={t_len})")
+
+            # Crop/rename to 30 dynamics if 4D
+            try:
+                _hdr_probe2 = nib.load(mag_file_to_use)
+                is_4d_post = (_hdr_probe2.ndim == 4)
+                t_len_post = _hdr_probe2.shape[-1] if is_4d_post else 1
+            except Exception as e:
+                print(f"Warning: could not probe NIfTI header after dummy removal: {e}")
+                is_4d_post = False
+                t_len_post = 1
+
+            if is_4d_post and t_len_post >= 1:
+                keep_vols = min(30, t_len_post)
+                mag_file_30dyn = os.path.join(OUTPUT_DIR, core_filename + '_30dyn.nii.gz')
+                print(f"Cropping to first {keep_vols} dynamics with fslroi...")
+                fslroi_cmd_30 = f"fslroi {mag_file_to_use} {mag_file_30dyn} 0 {keep_vols}"
+                result30 = subprocess.run(fslroi_cmd_30, shell=True, capture_output=True, text=True)
+                if result30.returncode != 0 or (not os.path.exists(mag_file_30dyn)):
+                    print(f"Warning: fslroi 30dyn failed or output missing: {result30.stderr}")
+                    print("Proceeding with current file (no 30dyn crop)...")
+                else:
+                    print(f"30-dynamic file created. Using: {mag_file_30dyn}")
+                    mag_file_to_use = mag_file_30dyn
+            else:
+                print(f"Skipping 30dyn crop (not 4D or no time dimension: ndim={4 if is_4d_post else 3}, t={t_len_post})")
             
             # Load magnitude data only
             print('Loading magnitude data...')
