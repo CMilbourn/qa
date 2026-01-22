@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 #qa_run_nophase_V10_multisubj_MASK_20dyn.py
+# run for fmri ge standard plus edits 202600122 data
 # coding: utf-8
 # qa_run_nophase.py based on qa_run_nophase.ipynb  
 # example run line: python qa_run_nophase_V9_multisubj_MASK_30dyn.py

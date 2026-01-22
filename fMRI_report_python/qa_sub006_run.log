@@ -1,0 +1,8 @@
+/Users/cmilbourn/Documents/GitHub/qa/fMRI_report_python/qa_run_nophase_V11_multisubj_MASK_20dyn.py:317: UserWarning: This figure includes Axes that are not compatible with tight_layout, so results might be incorrect.
+  fig.tight_layout(pad=0.3, rect=[0, 0, 0.90, 1])
+/Users/cmilbourn/Documents/GitHub/qa/fMRI_report_python/qa_run_nophase_V11_multisubj_MASK_20dyn.py:418: UserWarning: This figure includes Axes that are not compatible with tight_layout, so results might be incorrect.
+  fig.tight_layout(pad=0.5, rect=[0, 0, 0.90, 1])
+/Users/cmilbourn/Documents/GitHub/qa/fMRI_report_python/qa_run_nophase_V11_multisubj_MASK_20dyn.py:441: UserWarning: This figure includes Axes that are not compatible with tight_layout, so results might be incorrect.
+  fig.tight_layout(pad=0.5, rect=[0, 0, 0.90, 1])
+/Users/cmilbourn/Documents/GitHub/qa/fMRI_report_python/qa_run_nophase_V11_multisubj_MASK_20dyn.py:500: UserWarning: This figure includes Axes that are not compatible with tight_layout, so results might be incorrect.
+  fig.tight_layout(pad=0.5, rect=[0, 0, 0.90, 1])
