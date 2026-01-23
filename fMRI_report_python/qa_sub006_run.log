@@ -6,3 +6,220 @@
   fig.tight_layout(pad=0.5, rect=[0, 0, 0.90, 1])
 /Users/cmilbourn/Documents/GitHub/qa/fMRI_report_python/qa_run_nophase_V11_multisubj_MASK_20dyn.py:500: UserWarning: This figure includes Axes that are not compatible with tight_layout, so results might be incorrect.
   fig.tight_layout(pad=0.5, rect=[0, 0, 0.90, 1])
+/Users/cmilbourn/Documents/GitHub/qa/fMRI_report_python/qa_run_nophase_V11_multisubj_MASK_20dyn.py:706: UserWarning: This figure includes Axes that are not compatible with tight_layout, so results might be incorrect.
+  fig.tight_layout(pad=0.3, rect=[0, 0, 0.90, 1])
+/Users/cmilbourn/Documents/GitHub/qa/fMRI_report_python/qa_run_nophase_V11_multisubj_MASK_20dyn.py:732: RuntimeWarning: More than 20 figures have been opened. Figures created through the pyplot interface (`matplotlib.pyplot.figure`) are retained until explicitly closed and may consume too much memory. (To control this warning, see the rcParam `figure.max_open_warning`). Consider using `matplotlib.pyplot.close()`.
+  fig, axs = plt.subplots(1, 2, figsize=(8, 4))  # Adjust figsize as needed
+/Users/cmilbourn/Documents/GitHub/qa/fMRI_report_python/qa_run_nophase_V11_multisubj_MASK_20dyn.py:792: RuntimeWarning: More than 20 figures have been opened. Figures created through the pyplot interface (`matplotlib.pyplot.figure`) are retained until explicitly closed and may consume too much memory. (To control this warning, see the rcParam `figure.max_open_warning`). Consider using `matplotlib.pyplot.close()`.
+  fig = plt.figure(figsize=(8, 4))  # Adjust figsize as needed
+/Users/cmilbourn/Documents/GitHub/qa/fMRI_report_python/qa_run_nophase_V11_multisubj_MASK_20dyn.py:842: RuntimeWarning: More than 20 figures have been opened. Figures created through the pyplot interface (`matplotlib.pyplot.figure`) are retained until explicitly closed and may consume too much memory. (To control this warning, see the rcParam `figure.max_open_warning`). Consider using `matplotlib.pyplot.close()`.
+  fig = plt.figure(figsize=(6, 4))  # Adjust figsize as needed
+/Users/cmilbourn/Documents/GitHub/qa/fMRI_report_python/qa_run_nophase_V11_multisubj_MASK_20dyn.py:896: RuntimeWarning: More than 20 figures have been opened. Figures created through the pyplot interface (`matplotlib.pyplot.figure`) are retained until explicitly closed and may consume too much memory. (To control this warning, see the rcParam `figure.max_open_warning`). Consider using `matplotlib.pyplot.close()`.
+  fig, axs = plt.subplots(1, 1, figsize=(5, 5))
+/Users/cmilbourn/Documents/GitHub/qa/fMRI_report_python/qa_run_nophase_V11_multisubj_MASK_20dyn.py:909: RuntimeWarning: More than 20 figures have been opened. Figures created through the pyplot interface (`matplotlib.pyplot.figure`) are retained until explicitly closed and may consume too much memory. (To control this warning, see the rcParam `figure.max_open_warning`). Consider using `matplotlib.pyplot.close()`.
+  fig = plt.figure(figsize=(cols * figsize_scale, rows * figsize_scale))
+/Users/cmilbourn/Documents/GitHub/qa/fMRI_report_python/qa_run_nophase_V11_multisubj_MASK_20dyn.py:924: UserWarning: This figure includes Axes that are not compatible with tight_layout, so results might be incorrect.
+  fig.tight_layout(pad=0.3, rect=[0, 0, 0.90, 1])
+['/Users/cmilbourn/Documents/GitHub/qa/fMRI_report_python', '/usr/local/fsl/lib/python311.zip', '/usr/local/fsl/lib/python3.11', '/usr/local/fsl/lib/python3.11/lib-dynload', '/Users/cmilbourn/.local/lib/python3.11/site-packages', '/usr/local/fsl/lib/python3.11/site-packages', '/Users/cmilbourn/Documents/GitHub/qa/']
+<module 'fMRI_report_python.functions.snr' from '/Users/cmilbourn/Documents/GitHub/qa/fMRI_report_python/functions/snr.py'>
+['BayesianGaussianMixture', 'Isnr', 'Tsnr', '__builtins__', '__cached__', '__doc__', '__file__', '__loader__', '__name__', '__package__', '__spec__', 'nib', 'np', 'os']
+Skipping (not 4D or too few volumes): sub005-visit001_17976-012_ORIG_fmri_MB1_ARC2_fMRI_2mm_Sweet_20251125_bold_dev_20251216143719_40005.nii.gz shape=(128, 128, 20)
+Skipping (not 4D or too few volumes): sub005-visit001_17976-012_ORIG_fmri_MB2_ARC2_fMRI_2mm_Sweet_20251125_bold_dev_20251216143719_40004_20dyn_brain.nii.gz shape=(128, 128, 58)
+Skipping (not 4D or too few volumes): sub005-visit001_17976-012_ORIG_fmri_MB2_ARC2_fMRI_2mm_Sweet_20251125_bold_dev_20251216143719_40004_20dyn_brain_mask.nii.gz shape=(128, 128, 58)
+Skipping (not 4D or too few volumes): sub005-visit001_17976-012_ORIG_fmri_MB2_ARC2_fMRI_2mm_Sweet_20251125_bold_dev_20251216143719_40004_brain_mask.nii.gz shape=(128, 128, 58)
+Skipping (not 4D or too few volumes): sub005-visit001_17976-012_ORIG_fmri_MB2_ARC2_fMRI_2mm_Sweet_20251125_bold_dev_20251216143719_40004_nodummies_brain.nii.gz shape=(128, 128, 58)
+Skipping (not 4D or too few volumes): sub005-visit001_17976-012_ORIG_fmri_MB2_ARC2_fMRI_2mm_Sweet_20251125_bold_dev_20251216143719_40004_nodummies_brain_mask.nii.gz shape=(128, 128, 58)
+Skipping (not 4D or too few volumes): sub005-visit001_17976-012_ORIG_fmri_MB3_ARC2_fMRI_2mm_Sweet_20251125_bold_dev_20251216143719_40003_20dyn_brain.nii.gz shape=(128, 128, 57)
+Skipping (not 4D or too few volumes): sub005-visit001_17976-012_ORIG_fmri_MB3_ARC2_fMRI_2mm_Sweet_20251125_bold_dev_20251216143719_40003_20dyn_brain_mask.nii.gz shape=(128, 128, 57)
+Skipping (not 4D or too few volumes): sub005-visit001_17976-012_ORIG_fmri_MB3_ARC2_fMRI_2mm_Sweet_20251125_bold_dev_20251216143719_40003_brain_mask.nii.gz shape=(128, 128, 57)
+Skipping (not 4D or too few volumes): sub005-visit001_17976-012_ORIG_fmri_MB3_ARC2_fMRI_2mm_Sweet_20251125_bold_dev_20251216143719_40003_nodummies_brain.nii.gz shape=(128, 128, 57)
+Skipping (not 4D or too few volumes): sub005-visit001_17976-012_ORIG_fmri_MB3_ARC2_fMRI_2mm_Sweet_20251125_bold_dev_20251216143719_40003_nodummies_brain_mask.nii.gz shape=(128, 128, 57)
+Skipping (not 4D or too few volumes): sub005-visit001_17976-012_fmri_MB1_ARC2_fMRI_2mm_Sweet_20251125_bold_dev_20251216143719_5.nii.gz shape=(128, 128, 20)
+Skipping (not 4D or too few volumes): sub005-visit001_17976-012_fmri_MB1_ARC2_fMRI_2mm_Sweet_20251125_bold_dev_20251216143719_5_brain.nii.gz shape=(128, 128, 20)
+Skipping (not 4D or too few volumes): sub005-visit001_17976-012_fmri_MB1_ARC2_fMRI_2mm_Sweet_20251125_bold_dev_20251216143719_5_brain_mask.nii.gz shape=(128, 128, 20)
+Skipping (not 4D or too few volumes): sub005-visit001_17976-012_fmri_MB2_ARC2_fMRI_2mm_Sweet_20251125_bold_dev_20251216143719_4_20dyn_brain.nii.gz shape=(128, 128, 58)
+Skipping (not 4D or too few volumes): sub005-visit001_17976-012_fmri_MB2_ARC2_fMRI_2mm_Sweet_20251125_bold_dev_20251216143719_4_20dyn_brain_mask.nii.gz shape=(128, 128, 58)
+Skipping (not 4D or too few volumes): sub005-visit001_17976-012_fmri_MB2_ARC2_fMRI_2mm_Sweet_20251125_bold_dev_20251216143719_4_brain_mask.nii.gz shape=(128, 128, 58)
+Skipping (not 4D or too few volumes): sub005-visit001_17976-012_fmri_MB2_ARC2_fMRI_2mm_Sweet_20251125_bold_dev_20251216143719_4_nodummies_brain.nii.gz shape=(128, 128, 58)
+Skipping (not 4D or too few volumes): sub005-visit001_17976-012_fmri_MB2_ARC2_fMRI_2mm_Sweet_20251125_bold_dev_20251216143719_4_nodummies_brain_mask.nii.gz shape=(128, 128, 58)
+Skipping (not 4D or too few volumes): sub005-visit001_17976-012_fmri_MB3_ARC2_fMRI_2mm_Sweet_20251125_bold_dev_20251216143719_3_20dyn_brain.nii.gz shape=(128, 128, 57)
+Skipping (not 4D or too few volumes): sub005-visit001_17976-012_fmri_MB3_ARC2_fMRI_2mm_Sweet_20251125_bold_dev_20251216143719_3_20dyn_brain_mask.nii.gz shape=(128, 128, 57)
+Skipping (not 4D or too few volumes): sub005-visit001_17976-012_fmri_MB3_ARC2_fMRI_2mm_Sweet_20251125_bold_dev_20251216143719_3_brain_mask.nii.gz shape=(128, 128, 57)
+Skipping (not 4D or too few volumes): sub005-visit001_17976-012_fmri_MB3_ARC2_fMRI_2mm_Sweet_20251125_bold_dev_20251216143719_3_nodummies_brain.nii.gz shape=(128, 128, 57)
+Skipping (not 4D or too few volumes): sub005-visit001_17976-012_fmri_MB3_ARC2_fMRI_2mm_Sweet_20251125_bold_dev_20251216143719_3_nodummies_brain_mask.nii.gz shape=(128, 128, 57)
+Force-including (may be 3D): sub005-visit001_17976-012_fmri_MB1_ARC2_fMRI_2mm_Sweet_20251125_bold_dev_20251216143719_5.nii.gz
+Found: sub005-visit001_17976-012_ORIG_fmri_MB2_ARC2_fMRI_2mm_Sweet_20251125_bold_dev_20251216143719_40004.nii.gz
+Found: sub005-visit001_17976-012_ORIG_fmri_MB3_ARC2_fMRI_2mm_Sweet_20251125_bold_dev_20251216143719_40003.nii.gz
+Found: sub005-visit001_17976-012_fmri_MB2_ARC2_fMRI_2mm_Sweet_20251125_bold_dev_20251216143719_4.nii.gz
+Found: sub005-visit001_17976-012_fmri_MB3_ARC2_fMRI_2mm_Sweet_20251125_bold_dev_20251216143719_3.nii.gz
+Found: sub005-visit001_17976-012_fmri_MB1_ARC2_fMRI_2mm_Sweet_20251125_bold_dev_20251216143719_5.nii.gz
+
+Total files to process: 5
+
+================================================================================
+Processing file 1/5: sub005-visit001_17976-012_ORIG_fmri_MB2_ARC2_fMRI_2mm_Sweet_20251125_bold_dev_20251216143719_40004.nii.gz
+================================================================================
+Core filename: sub005-visit001_17976-012_ORIG_fmri_MB2_ARC2_fMRI_2mm_Sweet_20251125_bold_dev_20251216143719_40004
+Output directory: /Users/cmilbourn/Documents/tSNR_check_30dyn/qa_output/qa_session_20260122_140149/sub005-visit001_17976-012_ORIG_fmri_MB2_ARC2_fMRI_2mm_Sweet_20251125_bold_dev_20251216143719_40004
+Removing first 2 dummy volumes with fslroi...
+Dummy volumes removed. Using: /Users/cmilbourn/Documents/tSNR_check_30dyn/qa_output/qa_session_20260122_140149/sub005-visit001_17976-012_ORIG_fmri_MB2_ARC2_fMRI_2mm_Sweet_20251125_bold_dev_20251216143719_40004/sub005-visit001_17976-012_ORIG_fmri_MB2_ARC2_fMRI_2mm_Sweet_20251125_bold_dev_20251216143719_40004_nodummies.nii.gz
+Cropping to first 20 dynamics with fslroi...
+20-dynamic file created. Using: /Users/cmilbourn/Documents/tSNR_check_30dyn/qa_output/qa_session_20260122_140149/sub005-visit001_17976-012_ORIG_fmri_MB2_ARC2_fMRI_2mm_Sweet_20251125_bold_dev_20251216143719_40004/sub005-visit001_17976-012_ORIG_fmri_MB2_ARC2_fMRI_2mm_Sweet_20251125_bold_dev_20251216143719_40004_20dyn.nii.gz
+Loading magnitude data...
+No matching mask found. Creating mask with BET for sub005-visit001_17976-012_ORIG_fmri_MB2_ARC2_fMRI_2mm_Sweet_20251125_bold_dev_20251216143719_40004 ...
+Copied generated mask to: /Users/cmilbourn/Documents/tSNR_check_30dyn/qa_output/qa_session_20260122_140149/sub005-visit001_17976-012_ORIG_fmri_MB2_ARC2_fMRI_2mm_Sweet_20251125_bold_dev_20251216143719_40004/sub005-visit001_17976-012_ORIG_fmri_MB2_ARC2_fMRI_2mm_Sweet_20251125_bold_dev_20251216143719_40004_20dyn_brain_mask.nii.gz
+Mask generated: /Users/cmilbourn/Documents/tSNR_check_30dyn/Data2run/rawish/sub005/sub005-visit001_17976-012_ORIG_fmri_MB2_ARC2_fMRI_2mm_Sweet_20251125_bold_dev_20251216143719_40004_20dyn_brain_mask.nii.gz
+Slice indices - Axial: 29, Sagittal: 64, Coronal: 64
+Image dimensions: (128, 128, 58, 20)
+Mean volume std = 1964.78.
+Image has an iSNR of 0.47.
+Noise value used for iSNR: 1956.86
+(128, 128, 58)
+Mean tSNR: 18.67808134702898
+Found mask
+Mean tSNR in mask: 58.08942492520524
+Found TR = 3s in JSON file: /Users/cmilbourn/Documents/tSNR_check_30dyn/Data2run/rawish/sub005/sub005-visit001_17976-012_ORIG_fmri_MB2_ARC2_fMRI_2mm_Sweet_20251125_bold_dev_20251216143719_40004.json
+Using TR = 3.0s from JSON metadata
+Found TE = 0.025s in JSON file: /Users/cmilbourn/Documents/tSNR_check_30dyn/Data2run/rawish/sub005/sub005-visit001_17976-012_ORIG_fmri_MB2_ARC2_fMRI_2mm_Sweet_20251125_bold_dev_20251216143719_40004.json
+Using Ernst scaling factor = 1.0 for TR = 3.0s
+Mean tSNR per unit time: 10.783795293652915
+ROI analysis: using slice 29 with 19 timepoints (shape: (128, 128, 19))
+Mean tSNR within ROI: 49.71230797655815
+Mean SSN: 1414.449804897966
+
+================================================================================
+Processing file 2/5: sub005-visit001_17976-012_ORIG_fmri_MB3_ARC2_fMRI_2mm_Sweet_20251125_bold_dev_20251216143719_40003.nii.gz
+================================================================================
+Core filename: sub005-visit001_17976-012_ORIG_fmri_MB3_ARC2_fMRI_2mm_Sweet_20251125_bold_dev_20251216143719_40003
+Output directory: /Users/cmilbourn/Documents/tSNR_check_30dyn/qa_output/qa_session_20260122_140149/sub005-visit001_17976-012_ORIG_fmri_MB3_ARC2_fMRI_2mm_Sweet_20251125_bold_dev_20251216143719_40003
+Removing first 2 dummy volumes with fslroi...
+Dummy volumes removed. Using: /Users/cmilbourn/Documents/tSNR_check_30dyn/qa_output/qa_session_20260122_140149/sub005-visit001_17976-012_ORIG_fmri_MB3_ARC2_fMRI_2mm_Sweet_20251125_bold_dev_20251216143719_40003/sub005-visit001_17976-012_ORIG_fmri_MB3_ARC2_fMRI_2mm_Sweet_20251125_bold_dev_20251216143719_40003_nodummies.nii.gz
+Cropping to first 20 dynamics with fslroi...
+20-dynamic file created. Using: /Users/cmilbourn/Documents/tSNR_check_30dyn/qa_output/qa_session_20260122_140149/sub005-visit001_17976-012_ORIG_fmri_MB3_ARC2_fMRI_2mm_Sweet_20251125_bold_dev_20251216143719_40003/sub005-visit001_17976-012_ORIG_fmri_MB3_ARC2_fMRI_2mm_Sweet_20251125_bold_dev_20251216143719_40003_20dyn.nii.gz
+Loading magnitude data...
+No matching mask found. Creating mask with BET for sub005-visit001_17976-012_ORIG_fmri_MB3_ARC2_fMRI_2mm_Sweet_20251125_bold_dev_20251216143719_40003 ...
+Copied generated mask to: /Users/cmilbourn/Documents/tSNR_check_30dyn/qa_output/qa_session_20260122_140149/sub005-visit001_17976-012_ORIG_fmri_MB3_ARC2_fMRI_2mm_Sweet_20251125_bold_dev_20251216143719_40003/sub005-visit001_17976-012_ORIG_fmri_MB3_ARC2_fMRI_2mm_Sweet_20251125_bold_dev_20251216143719_40003_20dyn_brain_mask.nii.gz
+Mask generated: /Users/cmilbourn/Documents/tSNR_check_30dyn/Data2run/rawish/sub005/sub005-visit001_17976-012_ORIG_fmri_MB3_ARC2_fMRI_2mm_Sweet_20251125_bold_dev_20251216143719_40003_20dyn_brain_mask.nii.gz
+Slice indices - Axial: 28, Sagittal: 64, Coronal: 64
+Image dimensions: (128, 128, 57, 20)
+Mean volume std = 2042.28.
+Image has an iSNR of 0.48.
+Noise value used for iSNR: 2045.50
+(128, 128, 57)
+Mean tSNR: 16.630965330176352
+Found mask
+Mean tSNR in mask: 50.56085082863001
+Found TR = 3s in JSON file: /Users/cmilbourn/Documents/tSNR_check_30dyn/Data2run/rawish/sub005/sub005-visit001_17976-012_ORIG_fmri_MB3_ARC2_fMRI_2mm_Sweet_20251125_bold_dev_20251216143719_40003.json
+Using TR = 3.0s from JSON metadata
+Found TE = 0.025s in JSON file: /Users/cmilbourn/Documents/tSNR_check_30dyn/Data2run/rawish/sub005/sub005-visit001_17976-012_ORIG_fmri_MB3_ARC2_fMRI_2mm_Sweet_20251125_bold_dev_20251216143719_40003.json
+Using Ernst scaling factor = 1.0 for TR = 3.0s
+Mean tSNR per unit time: 9.601892310260647
+ROI analysis: using slice 28 with 19 timepoints (shape: (128, 128, 19))
+Mean tSNR within ROI: 38.074624570831155
+Mean SSN: 1492.045640376576
+
+================================================================================
+Processing file 3/5: sub005-visit001_17976-012_fmri_MB2_ARC2_fMRI_2mm_Sweet_20251125_bold_dev_20251216143719_4.nii.gz
+================================================================================
+Core filename: sub005-visit001_17976-012_fmri_MB2_ARC2_fMRI_2mm_Sweet_20251125_bold_dev_20251216143719_4
+Output directory: /Users/cmilbourn/Documents/tSNR_check_30dyn/qa_output/qa_session_20260122_140149/sub005-visit001_17976-012_fmri_MB2_ARC2_fMRI_2mm_Sweet_20251125_bold_dev_20251216143719_4
+Removing first 2 dummy volumes with fslroi...
+Dummy volumes removed. Using: /Users/cmilbourn/Documents/tSNR_check_30dyn/qa_output/qa_session_20260122_140149/sub005-visit001_17976-012_fmri_MB2_ARC2_fMRI_2mm_Sweet_20251125_bold_dev_20251216143719_4/sub005-visit001_17976-012_fmri_MB2_ARC2_fMRI_2mm_Sweet_20251125_bold_dev_20251216143719_4_nodummies.nii.gz
+Cropping to first 20 dynamics with fslroi...
+20-dynamic file created. Using: /Users/cmilbourn/Documents/tSNR_check_30dyn/qa_output/qa_session_20260122_140149/sub005-visit001_17976-012_fmri_MB2_ARC2_fMRI_2mm_Sweet_20251125_bold_dev_20251216143719_4/sub005-visit001_17976-012_fmri_MB2_ARC2_fMRI_2mm_Sweet_20251125_bold_dev_20251216143719_4_20dyn.nii.gz
+Loading magnitude data...
+No matching mask found. Creating mask with BET for sub005-visit001_17976-012_fmri_MB2_ARC2_fMRI_2mm_Sweet_20251125_bold_dev_20251216143719_4 ...
+Copied generated mask to: /Users/cmilbourn/Documents/tSNR_check_30dyn/qa_output/qa_session_20260122_140149/sub005-visit001_17976-012_fmri_MB2_ARC2_fMRI_2mm_Sweet_20251125_bold_dev_20251216143719_4/sub005-visit001_17976-012_fmri_MB2_ARC2_fMRI_2mm_Sweet_20251125_bold_dev_20251216143719_4_20dyn_brain_mask.nii.gz
+Mask generated: /Users/cmilbourn/Documents/tSNR_check_30dyn/Data2run/rawish/sub005/sub005-visit001_17976-012_fmri_MB2_ARC2_fMRI_2mm_Sweet_20251125_bold_dev_20251216143719_4_20dyn_brain_mask.nii.gz
+Slice indices - Axial: 29, Sagittal: 64, Coronal: 64
+Image dimensions: (128, 128, 58, 20)
+Mean volume std = 1515.86.
+Image has an iSNR of 0.51.
+Noise value used for iSNR: 1515.75
+(128, 128, 58)
+Mean tSNR: 18.095436417948196
+Found mask
+Mean tSNR in mask: 58.02410333589829
+Found TR = 3s in JSON file: /Users/cmilbourn/Documents/tSNR_check_30dyn/Data2run/rawish/sub005/sub005-visit001_17976-012_fmri_MB2_ARC2_fMRI_2mm_Sweet_20251125_bold_dev_20251216143719_4.json
+Using TR = 3.0s from JSON metadata
+Found TE = 0.025s in JSON file: /Users/cmilbourn/Documents/tSNR_check_30dyn/Data2run/rawish/sub005/sub005-visit001_17976-012_fmri_MB2_ARC2_fMRI_2mm_Sweet_20251125_bold_dev_20251216143719_4.json
+Using Ernst scaling factor = 1.0 for TR = 3.0s
+Mean tSNR per unit time: 10.447405087006155
+ROI analysis: using slice 29 with 19 timepoints (shape: (128, 128, 19))
+Mean tSNR within ROI: 49.711114935826444
+Mean SSN: 1198.5323044349407
+
+================================================================================
+Processing file 4/5: sub005-visit001_17976-012_fmri_MB3_ARC2_fMRI_2mm_Sweet_20251125_bold_dev_20251216143719_3.nii.gz
+================================================================================
+Core filename: sub005-visit001_17976-012_fmri_MB3_ARC2_fMRI_2mm_Sweet_20251125_bold_dev_20251216143719_3
+Output directory: /Users/cmilbourn/Documents/tSNR_check_30dyn/qa_output/qa_session_20260122_140149/sub005-visit001_17976-012_fmri_MB3_ARC2_fMRI_2mm_Sweet_20251125_bold_dev_20251216143719_3
+Removing first 2 dummy volumes with fslroi...
+Dummy volumes removed. Using: /Users/cmilbourn/Documents/tSNR_check_30dyn/qa_output/qa_session_20260122_140149/sub005-visit001_17976-012_fmri_MB3_ARC2_fMRI_2mm_Sweet_20251125_bold_dev_20251216143719_3/sub005-visit001_17976-012_fmri_MB3_ARC2_fMRI_2mm_Sweet_20251125_bold_dev_20251216143719_3_nodummies.nii.gz
+Cropping to first 20 dynamics with fslroi...
+20-dynamic file created. Using: /Users/cmilbourn/Documents/tSNR_check_30dyn/qa_output/qa_session_20260122_140149/sub005-visit001_17976-012_fmri_MB3_ARC2_fMRI_2mm_Sweet_20251125_bold_dev_20251216143719_3/sub005-visit001_17976-012_fmri_MB3_ARC2_fMRI_2mm_Sweet_20251125_bold_dev_20251216143719_3_20dyn.nii.gz
+Loading magnitude data...
+No matching mask found. Creating mask with BET for sub005-visit001_17976-012_fmri_MB3_ARC2_fMRI_2mm_Sweet_20251125_bold_dev_20251216143719_3 ...
+Copied generated mask to: /Users/cmilbourn/Documents/tSNR_check_30dyn/qa_output/qa_session_20260122_140149/sub005-visit001_17976-012_fmri_MB3_ARC2_fMRI_2mm_Sweet_20251125_bold_dev_20251216143719_3/sub005-visit001_17976-012_fmri_MB3_ARC2_fMRI_2mm_Sweet_20251125_bold_dev_20251216143719_3_20dyn_brain_mask.nii.gz
+Mask generated: /Users/cmilbourn/Documents/tSNR_check_30dyn/Data2run/rawish/sub005/sub005-visit001_17976-012_fmri_MB3_ARC2_fMRI_2mm_Sweet_20251125_bold_dev_20251216143719_3_20dyn_brain_mask.nii.gz
+Slice indices - Axial: 28, Sagittal: 64, Coronal: 64
+Image dimensions: (128, 128, 57, 20)
+Mean volume std = 1521.56.
+Image has an iSNR of 0.54.
+Noise value used for iSNR: 1533.84
+(128, 128, 57)
+Mean tSNR: 16.061085054735944
+Found mask
+Mean tSNR in mask: 50.482856549936976
+Found TR = 3s in JSON file: /Users/cmilbourn/Documents/tSNR_check_30dyn/Data2run/rawish/sub005/sub005-visit001_17976-012_fmri_MB3_ARC2_fMRI_2mm_Sweet_20251125_bold_dev_20251216143719_3.json
+Using TR = 3.0s from JSON metadata
+Found TE = 0.025s in JSON file: /Users/cmilbourn/Documents/tSNR_check_30dyn/Data2run/rawish/sub005/sub005-visit001_17976-012_fmri_MB3_ARC2_fMRI_2mm_Sweet_20251125_bold_dev_20251216143719_3.json
+Using Ernst scaling factor = 1.0 for TR = 3.0s
+Mean tSNR per unit time: 9.272871779829265
+ROI analysis: using slice 28 with 19 timepoints (shape: (128, 128, 19))
+Mean tSNR within ROI: 38.07623292093152
+Mean SSN: 1270.6111000462581
+
+================================================================================
+Processing file 5/5: sub005-visit001_17976-012_fmri_MB1_ARC2_fMRI_2mm_Sweet_20251125_bold_dev_20251216143719_5.nii.gz
+================================================================================
+Core filename: sub005-visit001_17976-012_fmri_MB1_ARC2_fMRI_2mm_Sweet_20251125_bold_dev_20251216143719_5
+Output directory: /Users/cmilbourn/Documents/tSNR_check_30dyn/qa_output/qa_session_20260122_140149/sub005-visit001_17976-012_fmri_MB1_ARC2_fMRI_2mm_Sweet_20251125_bold_dev_20251216143719_5
+Skipping dummy removal (not 4D or too few timepoints: ndim=3, t=1)
+Skipping 20dyn crop (not 4D or no time dimension: ndim=3, t=1)
+Loading magnitude data...
+Using existing per-file mask: /Users/cmilbourn/Documents/tSNR_check_30dyn/Data2run/rawish/sub005/sub005-visit001_17976-012_fmri_MB1_ARC2_fMRI_2mm_Sweet_20251125_bold_dev_20251216143719_5_brain_mask.nii.gz
+Successfully loaded mask from: /Users/cmilbourn/Documents/tSNR_check_30dyn/Data2run/rawish/sub005/sub005-visit001_17976-012_fmri_MB1_ARC2_fMRI_2mm_Sweet_20251125_bold_dev_20251216143719_5_brain_mask.nii.gz
+Detected 3D dataset: running minimal QA pipeline (no tSNR).
+Found TR = 3s in JSON file: /Users/cmilbourn/Documents/tSNR_check_30dyn/Data2run/rawish/sub005/sub005-visit001_17976-012_fmri_MB1_ARC2_fMRI_2mm_Sweet_20251125_bold_dev_20251216143719_5.json
+Found TE = 0.025s in JSON file: /Users/cmilbourn/Documents/tSNR_check_30dyn/Data2run/rawish/sub005/sub005-visit001_17976-012_fmri_MB1_ARC2_fMRI_2mm_Sweet_20251125_bold_dev_20251216143719_5.json
+
+================================================================================
+Creating combined PowerPoint presentation...
+================================================================================
+
+Combined PowerPoint created: /Users/cmilbourn/Documents/tSNR_check_30dyn/qa_output/qa_session_20260122_140149/QA_Report_Combined_20260122_140653.pptx
+
+Combined metrics CSV saved to: /Users/cmilbourn/Documents/tSNR_check_30dyn/qa_output/qa_session_20260122_140149/qa_metrics_combined_20260122_140149.csv
+
+Mask processing summary:
+  Existing masks used: 1
+  Masks generated via BET: 4
+  No mask creation failures.
+
+Processing results by input file:
+  Requested: 5
+  Completed: 5
+  Failed: 0
+    [OK] sub005-visit001_17976-012_ORIG_fmri_MB2_ARC2_fMRI_2mm_Sweet_20251125_bold_dev_20251216143719_40004.nii.gz | TR=3.0 | mask_used=yes
+    [OK] sub005-visit001_17976-012_ORIG_fmri_MB3_ARC2_fMRI_2mm_Sweet_20251125_bold_dev_20251216143719_40003.nii.gz | TR=3.0 | mask_used=yes
+    [OK] sub005-visit001_17976-012_fmri_MB2_ARC2_fMRI_2mm_Sweet_20251125_bold_dev_20251216143719_4.nii.gz | TR=3.0 | mask_used=yes
+    [OK] sub005-visit001_17976-012_fmri_MB3_ARC2_fMRI_2mm_Sweet_20251125_bold_dev_20251216143719_3.nii.gz | TR=3.0 | mask_used=yes
+    [OK] sub005-visit001_17976-012_fmri_MB1_ARC2_fMRI_2mm_Sweet_20251125_bold_dev_20251216143719_5.nii.gz | TR=3.0 | mask_used=yes
+
+Processing log saved to: /Users/cmilbourn/Documents/tSNR_check_30dyn/qa_output/qa_session_20260122_140149/processing_log.csv
+
+================================================================================
+COMPLETED! Processed 5 datasets
+Output directory: /Users/cmilbourn/Documents/tSNR_check_30dyn/qa_output/qa_session_20260122_140149
+================================================================================

@@ -1589,13 +1589,13 @@ def create_combined_powerpoint(session_dir, all_output_dirs, all_metrics):
     return pptx_filename
 
 if __name__ == "__main__":
-    # Auto-discover 4D datasets in sub005 (exclude 3D/short)
-    target_dir = '/Users/cmilbourn/Documents/tSNR_check_30dyn/Data2run/rawish/sub005'
+    # Auto-discover 4D datasets in sub006/func (exclude 3D/short)
+    target_dir = '/Users/cmilbourn/Documents/Sweet_Data/Development_Data/Sweet_Data_BIDS_Dev/sub006/func'
     candidate_files = sorted(glob(os.path.join(target_dir, '*.nii*')))
     dataset_configs = []
     # Force-include specific files even if 3D
     force_include = [
-        '/Users/cmilbourn/Documents/tSNR_check_30dyn/Data2run/rawish/sub005/sub005-visit001_17976-012_fmri_MB1_ARC2_fMRI_2mm_Sweet_20251125_bold_dev_20251216143719_5.nii.gz'
+        # Add any specific files to force include here
     ]
 
     for fpath in candidate_files:
@@ -1639,7 +1639,7 @@ if __name__ == "__main__":
     print(f"\nTotal files to process: {len(dataset_configs)}")
     
     # Create base output directory
-    base_output_dir = '/Users/cmilbourn/Documents/tSNR_check_30dyn/qa_output'
+    base_output_dir = '/Users/cmilbourn/Documents/tSNR_check_20dyn/qa_output_sub006'
     os.makedirs(base_output_dir, exist_ok=True)
     
     # Create a timestamped session directory
