@@ -1564,7 +1564,7 @@ def create_combined_powerpoint(session_dir, all_output_dirs, all_metrics):
 
 if __name__ == "__main__":
     # Auto-discover 4D datasets in sub007/func (exclude 3D/short)
-    target_dir = '/Users/cmilbourn/Documents/Sweet_Data/Development_Data/Sweet_Data_BIDS_Dev/sub007/func'
+    target_dir = '/Users/cmilbourn/Documents/Sweet_Data/Development_Data/Sweet_Data_BIDS_Dev/sub007/sub007-visit002/'
     candidate_files = sorted(glob(os.path.join(target_dir, '*.nii*')))
     dataset_configs = []
     # Force-include specific files even if 3D

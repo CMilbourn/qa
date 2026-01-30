@@ -1564,7 +1564,7 @@ def create_combined_powerpoint(session_dir, all_output_dirs, all_metrics):
 
 if __name__ == "__main__":
     # Auto-discover 4D datasets in sub007/func (exclude 3D/short)
-    target_dir = '/Users/cmilbourn/Documents/Sweet_Data/Development_Data/Sweet_Data_BIDS_Dev/sub007/func'
+    target_dir = '/Users/cmilbourn/Documents/Sweet_Data/Development_Data/Sweet_Data_BIDS_Dev/sub008/func'
     candidate_files = sorted(glob(os.path.join(target_dir, '*.nii*')))
     dataset_configs = []
     # Force-include specific files even if 3D
@@ -1617,7 +1617,7 @@ if __name__ == "__main__":
     print(f"\nTotal files to process: {len(dataset_configs)}")
     
     # Create base output directory
-    base_output_dir = '/Users/cmilbourn/Documents/tSNR_check_40dyn/qa_output_sub007'
+    base_output_dir = '/Users/cmilbourn/Documents/tSNR_check_40dyn/qa_output_sub008'
     os.makedirs(base_output_dir, exist_ok=True)
     
     # Create a timestamped session directory
