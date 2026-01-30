@@ -1,6 +1,11 @@
 #!/usr/bin/env python
 #qa_run_nophase_V10_multisubj_MASK_40dyn.py
 # REQUIREMENTS: conda install -y numpy matplotlib nibabel scipy python-pptx
+# REQUIREMENTS (recommended venv):
+#   /opt/homebrew/bin/python3 -m venv /Users/cmilbourn/Documents/GitHub/qa/venv
+#   /Users/cmilbourn/Documents/GitHub/qa/venv/bin/pip install numpy matplotlib nibabel scipy python-pptx pillow scikit-learn
+# Alternative (system install):
+#   /opt/homebrew/bin/python3 -m pip install numpy matplotlib nibabel scipy python-pptx pillow
 # run for fmri ge standard plus edits 202600122 data
 # coding: utf-8
 # qa_run_nophase.py based on qa_run_nophase.ipynb  
@@ -1564,6 +1569,7 @@ def create_combined_powerpoint(session_dir, all_output_dirs, all_metrics):
 
 if __name__ == "__main__":
     # Auto-discover 4D datasets in sub007/func (exclude 3D/short)
+    # target_dir = '/Users/cmilbourn/Documents/Sweet_Data/Development_Data/Sweet_Data_BIDS_Dev/sub007/sub007-visit002/'
     target_dir = '/Users/cmilbourn/Documents/Sweet_Data/Development_Data/Sweet_Data_BIDS_Dev/sub008/func'
     candidate_files = sorted(glob(os.path.join(target_dir, '*.nii*')))
     dataset_configs = []
@@ -1617,6 +1623,7 @@ if __name__ == "__main__":
     print(f"\nTotal files to process: {len(dataset_configs)}")
     
     # Create base output directory
+    # base_output_dir = '/Users/cmilbourn/Documents/tSNR_check_40dyn/qa_output_sub007'
     base_output_dir = '/Users/cmilbourn/Documents/tSNR_check_40dyn/qa_output_sub008'
     os.makedirs(base_output_dir, exist_ok=True)
     
