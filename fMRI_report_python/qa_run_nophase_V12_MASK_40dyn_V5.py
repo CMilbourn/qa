@@ -1576,7 +1576,7 @@ if __name__ == "__main__":
     dataset_configs = []
     # Force-include specific files even if 3D
     force_include = [
-        # Add any specific files to force include here
+        '/Users/cmilbourn/Documents/Sweet_Data/Development_Data/Sweet_Data_BIDS_Dev/sub009/func/sub009_2_Sweet_20260130_tsnr_dev_20260130133041_2_A_MB1_As2_epiRTSPMIC.nii.gz'
     ]
 
     for fpath in candidate_files:
