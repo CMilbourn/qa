@@ -352,11 +352,20 @@ def main():
     # Find QA output directories
     qa_dirs = []
     for item in os.listdir(args.qa_parent_dir):
-        if item.startswith('qa_output_') and os.path.isdir(os.path.join(args.qa_parent_dir, item)):
-            qa_dirs.append(os.path.join(args.qa_parent_dir, item))
+        item_path = os.path.join(args.qa_parent_dir, item)
+        if os.path.isdir(item_path):
+            # Check for qa_output_* directories
+            if item.startswith('qa_output_'):
+                qa_dirs.append(item_path)
+            # Also check if it's a qa_session_* directory containing scan subdirectories
+            elif item.startswith('qa_session_'):
+                for scan_item in os.listdir(item_path):
+                    scan_path = os.path.join(item_path, scan_item)
+                    if os.path.isdir(scan_path):
+                        qa_dirs.append(scan_path)
     
     if not qa_dirs:
-        print(f"❌ No qa_output_* directories found in {args.qa_parent_dir}")
+        print(f"❌ No qa_output_* or qa_session_* directories found in {args.qa_parent_dir}")
         return 1
     
     print(f"📁 Found {len(qa_dirs)} QA output directories:")
