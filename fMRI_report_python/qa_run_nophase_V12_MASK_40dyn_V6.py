@@ -1624,7 +1624,7 @@ if __name__ == "__main__":
     # Create base output directory
     # base_output_dir = '/Users/cmilbourn/Documents/tSNR_check_40dyn/qa_output_sub007'
     # base_output_dir = '/Users/cmilbourn/Documents/tSNR_check_40dyn/qa_output_sub008'
-    base_output_dir = '/Users/cmilbourn/Documents/tSNR_check_40dyn/qa_output_sub001_visit004'
+    base_output_dir = '/Users/cmilbourn/Documents/tSNR_check_40dyn/qa_output_sub010'
     os.makedirs(base_output_dir, exist_ok=True)
     
     # Create a timestamped session directory
