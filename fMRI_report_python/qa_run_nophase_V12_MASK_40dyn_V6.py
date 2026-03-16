@@ -1,5 +1,7 @@
 #!/usr/bin/env python
+
 #qa_run_nophase_V10_multisubj_MASK_40dyn.py
+# example run line: source venv/bin/activate && python qa_run_nophase_V12_MASK_40dyn_V6.py
 # REQUIREMENTS: conda install -y numpy matplotlib nibabel scipy python-pptx pandas
 # REQUIREMENTS (recommended venv):
 #   /opt/homebrew/bin/python3 -m venv /Users/cmilbourn/Documents/GitHub/qa/venv
@@ -18,7 +20,8 @@
 # This notebook gives example uses of image based QA metrics in `qa`.
 # 
 # A large chunk of this code has been taken from Alex Daniel's `ukat` code: https://github.com/UKRIN-MAPS/ukat.
-# 
+# # CM got this from Michael Ashgar and then made edits
+
 # We'll start with some imports and general housekeeping.
 # 
 # Reference for tSNR: https://doi.org/10.1016/j.neuroimage.2005.01.007
@@ -41,11 +44,36 @@
 # 
 # - If you have a nifti with the word `mask` in it, in the same folder, then it will find this and mask your data by it.
 
+import os
 import sys
+from pathlib import Path
+
+
+def _ensure_expected_python_environment():
+    """Re-run this script with the project venv interpreter if available.
+
+    This mirrors running `source venv/bin/activate` before execution, so
+    dependencies are consistently resolved when the script is launched with the
+    system Python.
+    """
+    # Allow opting out when needed (e.g., debugging with a custom interpreter).
+    if os.environ.get("QA_SKIP_VENV_BOOTSTRAP") == "1":
+        return
+
+    current_python = Path(sys.executable).resolve()
+    repo_root = Path(__file__).resolve().parents[1]
+    expected_python = repo_root / "venv" / "bin" / "python"
+
+    if expected_python.exists() and current_python != expected_python.resolve():
+        print(f"Switching to project venv interpreter: {expected_python}")
+        os.execv(str(expected_python), [str(expected_python), *sys.argv])
+
+
+_ensure_expected_python_environment()
+
 sys.path.append('/Users/cmilbourn/Documents/GitHub/qa/')  # ** change line to match code folder location **
 print(sys.path)
 
-import os
 import subprocess
 
 import numpy as np
@@ -1568,15 +1596,21 @@ def create_combined_powerpoint(session_dir, all_output_dirs, all_metrics):
     return pptx_filename
 
 if __name__ == "__main__":
-    # Auto-discover 4D datasets in sub007/func (exclude 3D/short)
-    # target_dir = '/Users/cmilbourn/Documents/Sweet_Data/Development_Data/Sweet_Data_BIDS_Dev/sub007/sub007-visit002/'
-    # target_dir = '/Users/cmilbourn/Documents/Sweet_Data/Development_Data/Sweet_Data_BIDS_Dev/sub008/func'
-    target_dir = '/Users/cmilbourn/Documents/Sweet_Data/Development_Data/Sweet_Data_BIDS_Dev/sub001/sub001-visit004/'
+    # Specify files to process directly
+    # dataset_configs = [
+    #     { 'path': '/Users/cmilbourn/Documents/Sweet_Data/Development_Data/nifti/sub001/sub001_Phase2_2samples/func/sub001-visit004-ses001_task-2S_bold.nii.gz', 'TR': None },
+    #     { 'path': '/Users/cmilbourn/Documents/Sweet_Data/Development_Data/Sweet_Data_BIDS_Dev/sub010/sub010-visit002/func/sub010-visit002-ses001_task-2S_bold.nii.gz', 'TR': None }
+    # ]
+    
+    # ===== AUTO-DISCOVERY MODE =====
+    #### INPUT DIRECTORY HERE ####
+    # Auto-discover 4D datasets in target_dir (exclude 3D/short)
+    target_dir = '/Users/cmilbourn/Documents/tSNR_check_40dyn/Lily_data/pre_aqua/'
     candidate_files = sorted(glob(os.path.join(target_dir, '*.nii*')))
     dataset_configs = []
     # Force-include specific files even if 3D
     force_include = []
-
+    
     for fpath in candidate_files:
         if not fpath.endswith(('.nii', '.nii.gz')):
             continue
@@ -1594,15 +1628,15 @@ if __name__ == "__main__":
             print(f"Skipping (load error) {fpath}: {e}")
             continue
         dataset_configs.append({ 'path': fpath, 'TR': None })
-
+    
     # Add forced files (if exist) regardless of 4D check
     for fpath in force_include:
         if os.path.exists(fpath) and all(d['path'] != fpath for d in dataset_configs):
             print(f"Force-including (may be 3D): {os.path.basename(fpath)}")
             dataset_configs.append({ 'path': fpath, 'TR': None })
-
-
-    # Check which files exist
+    # ===== END AUTO-DISCOVERY MODE =====
+    
+    # Verify files exist
     existing_configs = []
     for cfg in dataset_configs:
         fpath = cfg['path']
@@ -1618,13 +1652,20 @@ if __name__ == "__main__":
 
     # Replace with verified list
     dataset_configs = existing_configs
+
+    if not existing_configs:
+        print("No files found to process!")
+        exit(1)
+
+    # Replace with verified list
+    dataset_configs = existing_configs
     
     print(f"\nTotal files to process: {len(dataset_configs)}")
     
     # Create base output directory
     # base_output_dir = '/Users/cmilbourn/Documents/tSNR_check_40dyn/qa_output_sub007'
     # base_output_dir = '/Users/cmilbourn/Documents/tSNR_check_40dyn/qa_output_sub008'
-    base_output_dir = '/Users/cmilbourn/Documents/tSNR_check_40dyn/qa_output_sub010'
+    base_output_dir = '/Users/cmilbourn/Documents/tSNR_check_40dyn/'
     os.makedirs(base_output_dir, exist_ok=True)
     
     # Create a timestamped session directory
@@ -1705,7 +1746,7 @@ if __name__ == "__main__":
                 t_len_post = 1
 
             if is_4d_post and t_len_post >= 1:
-                keep_vols = min(40, t_len_post)
+                keep_vols = min(38, t_len_post)
                 mag_file_40dyn = os.path.join(OUTPUT_DIR, core_filename + '_40dyn.nii.gz')
                 print(f"Cropping to first {keep_vols} dynamics with fslroi...")
                 fslroi_cmd_40 = f"fslroi {mag_file_to_use} {mag_file_40dyn} 0 {keep_vols}"
