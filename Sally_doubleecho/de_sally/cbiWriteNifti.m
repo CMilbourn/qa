@@ -19,7 +19,8 @@ function [byteswritten,hdr]=cbiWriteNifti(fname,data,hdr,prec,subset,short_nan);
   
   
 
-[pathstr,bname,ext,ver]=fileparts(fname);
+% OLD: [pathstr,bname,ext,ver]=fileparts(fname); % ver removed in modern MATLAB
+[pathstr,bname,ext]=fileparts(fname);
 
 % 1D curvature file fix: 
 % check to see if this is 1D image that has a large second

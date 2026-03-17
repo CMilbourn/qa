@@ -52,6 +52,14 @@
 %
 %        e.g: de('e1.nii', 'e2.nii', [25 40])
 %% edits added 20260317 Colette Milbourn frmo _V1.m
+% replace fileparts calls to support modern MATLAB versions (i.e. remove 'ver' output argument)
+% add support for absolute paths in direct function calls (i.e. not just UI-based file selection)
+% add support for .nii.gz files by transparently unzipping in-place before loading with cbiReadNifti (which cannot read compressed files directly)
+% add error handling for cbiReadNifti calls to catch and report errors loading files
+% add more detailed comments and help text
+% add progress printouts during processing of 4D images
+% replaced expired/legacy isfile with mr_isfile with support for older MATLAB versions
+% outputs as 'nii.gz' if input is 'nii.gz' (previously only 'nii' or 'hdr/img' supported)
 function [  ]=de2_V1( fileName_e1, fileName_e2, echoTimes, varargin )
 
 % ----------------------------------------------------------------------
@@ -106,7 +114,7 @@ if ieNotDefined('fileName_e1') ||  ieNotDefined('fileName_e2')
   if isequal(fileName_e2,0),  disp('User pressed cancel @ file 2'), return, end
 end
 
-% OLD: direct calls assumed filename-only inputs.
+% OLD - edit by CCM 20260317 -  - edit by CCM 20260317 - : direct calls assumed filename-only inputs.
 % support absolute paths in direct function calls
 [pathIn_e1,nameIn_e1,extIn_e1] = fileparts(fileName_e1);
 if ~isempty(pathIn_e1)
@@ -140,9 +148,9 @@ end
 pat = 'echo\d\d';
 [a,str,ext] =  fileparts(fileName_e1);
 match = regexp(str, pat, 'match'); 
-% OLD: filestem = stripext(str,match{1});
+% OLD - edit by CCM 20260317 -  - edit by CCM 20260317 - : filestem = stripext(str,match{1});
 if isempty(match)
-  % OLD: only echoNN pattern supported.
+  % OLD - edit by CCM 20260317 -  - edit by CCM 20260317 - : only echoNN pattern supported.
   match = regexp(str, '(_e1|e1)$', 'match');
 end
 if isempty(match)
@@ -150,7 +158,7 @@ if isempty(match)
 else
   filestem = stripext(str,match{1});
 end
-% OLD: if strcmp(ext, '.nii')
+% OLD - edit by CCM 20260317 - : if strcmp(ext, '.nii')
 if ~isempty(regexpi(fileName_e1, '\.nii(\.gz)?$', 'once'))
   hdr='.nii'; img='.nii';
 elseif strcmp(ext, '.nii')
@@ -161,11 +169,11 @@ end
 
 % save output images here - will just save images in same folder as originals.
 if ieNotDefined('pathName_e1'), pathName_e1 = './'; end
-% OLD: echo2 path implicitly reused pathName_e1.
+% OLD - edit by CCM 20260317 - : echo2 path implicitly reused pathName_e1.
 if ieNotDefined('pathName_e2'), pathName_e2 = pathName_e1; end
 pathName_out = pathName_e1;
 
-% OLD: cbiReadNifti stack cannot open .nii.gz directly.
+% OLD - edit by CCM 20260317 - : cbiReadNifti stack cannot open .nii.gz directly.
 % transparently unzip compressed NIfTI files in-place before loading.
 if ~isempty(regexpi(fileName_e1, '\.nii\.gz$', 'once'))
   fileName_e1_unzipped = regexprep(fileName_e1, '\.gz$', '');
@@ -189,10 +197,10 @@ filePath_e1 = fullfile(pathName_e1,fileName_e1);
 disp(['Echo1 path: ' filePath_e1]);
 disp(['Echo1 exists: ' num2str(exist(filePath_e1,'file'))]);
 try
-  % OLD: [tc4d_e1, hdr_e1]=cbiReadNifti([pathName_e1,fileName_e1]);
+  % OLD - edit by CCM 20260317 - : [tc4d_e1, hdr_e1]=cbiReadNifti([pathName_e1,fileName_e1]);
   [tc4d_e1, hdr_e1]=cbiReadNifti(filePath_e1);
 catch ME
-    % OLD: disp('Error loading Echo 1, please ensure that the input file does not have any missing volumes, corrupted hdr, etc...'),return
+    % OLD - edit by CCM 20260317 - : disp('Error loading Echo 1, please ensure that the input file does not have any missing volumes, corrupted hdr, etc...'),return
     disp('Error loading Echo 1, please ensure that the input file does not have any missing volumes, corrupted hdr, etc...')
     disp(['Underlying error: ' ME.message])
     return
@@ -203,10 +211,10 @@ filePath_e2 = fullfile(pathName_e2,fileName_e2);
 disp(['Echo2 path: ' filePath_e2]);
 disp(['Echo2 exists: ' num2str(exist(filePath_e2,'file'))]);
 try
-  % OLD: [tc4d_e2, hdr_e2]=cbiReadNifti([pathName_e1,fileName_e2]);
+  % OLD - edit by CCM 20260317 - : [tc4d_e2, hdr_e2]=cbiReadNifti([pathName_e1,fileName_e2]);
   [tc4d_e2, hdr_e2]=cbiReadNifti(filePath_e2);
 catch ME
-    % OLD: disp('Error loading Echo 2, please ensure that the input file does not have any missing volumes, corrupted hdr, etc...'),return
+    % OLD - edit by CCM 20260317 - : disp('Error loading Echo 2, please ensure that the input file does not have any missing volumes, corrupted hdr, etc...'),return
     disp('Error loading Echo 2, please ensure that the input file does not have any missing volumes, corrupted hdr, etc...')
     disp(['Underlying error: ' ME.message])
     return    
@@ -295,6 +303,12 @@ if method==1 || method==4
     fileName_out = [pathName_out,filestem,'ws_map',img];
     fprintf('Saving 4d t2* weighed file: %s\n', fileName_out);
     cbiWriteNifti(fileName_out,tc4d,com_hdr);
+    if strcmpi(img,'.nii')
+      % OLD: output remained uncompressed .nii
+      gzip(fileName_out);
+      delete(fileName_out);
+      fprintf('Compressed output: %s\n', [fileName_out '.gz']);
+    end
     
     % clean up NAN voxels in T2s_av image... make structural zeros
     badIdx = ( isnan(T2s_av));
@@ -310,6 +324,12 @@ if method==1 || method==4
     T2s_av_hdr.pixdim(4) = 1; % time
     fprintf('Saving T2* average (in ms) data: %s\n', T2s_av_outfilename);
     cbiWriteNifti(T2s_av_outfilename,T2s_av,T2s_av_hdr);
+    if strcmpi(img,'.nii')
+      % OLD: output remained uncompressed .nii
+      gzip(T2s_av_outfilename);
+      delete(T2s_av_outfilename);
+      fprintf('Compressed output: %s\n', [T2s_av_outfilename '.gz']);
+    end
     
     %preallocate space for 4D T2* image
     T2s = zeros(xdim, ydim, zdim, tvols);
@@ -337,6 +357,12 @@ if method==1 || method==4
     T2s_out_hdr.descrip = 'Fitted 4d T2*';
     fprintf('Saving 4d T2* (in ms) data: %s\n', T2s_outfilename);
     cbiWriteNifti(T2s_outfilename,T2s, T2s_out_hdr);
+    if strcmpi(img,'.nii')
+      % OLD: output remained uncompressed .nii
+      gzip(T2s_outfilename);
+      delete(T2s_outfilename);
+      fprintf('Compressed output: %s\n', [T2s_outfilename '.gz']);
+    end
     
    
 end
@@ -358,6 +384,12 @@ if (method == 3) || (method == 4)
   fileName_out = [pathName_out,filestem,'ss_map',img];
   fprintf('Saving 4d summated file: %s\n', fileName_out);
   cbiWriteNifti(fileName_out,tc4d_ss,ss_hdr);
+  if strcmpi(img,'.nii')
+    % OLD: output remained uncompressed .nii
+    gzip(fileName_out);
+    delete(fileName_out);
+    fprintf('Compressed output: %s\n', [fileName_out '.gz']);
+  end
 end
 
 % switch divide by zero warning on again:
