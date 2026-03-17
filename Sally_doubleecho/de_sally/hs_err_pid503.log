@@ -1,0 +1,278 @@
+#
+# An unexpected error has been detected by Java Runtime Environment:
+#
+# java.lang.OutOfMemoryError: requested 362656 bytes for Chunk::new. Out of swap space?
+#
+#  Internal Error (allocation.cpp:218), pid=503, tid=15
+#  Error: Chunk::new
+#
+# Java VM: Java HotSpot(TM) 64-Bit Server VM (11.2-b01 mixed mode solaris-sparc)
+# If you would like to submit a bug report, please visit:
+#   http://java.sun.com/webapps/bugreport/crash.jsp
+# The crash happened outside the Java Virtual Machine in native code.
+# See problematic frame for where to report the bug.
+#
+
+---------------  T H R E A D  ---------------
+
+Current thread (0x00000001003b6000):  JavaThread "CompilerThread1" daemon [_thread_in_native, id=15, stack(0xffffffff4f200000,0xffffffff4f300000)]
+
+Stack: [0xffffffff4f200000,0xffffffff4f300000],  sp=0xffffffff4f2f9e10,  free space=999k
+Native frames: (J=compiled Java code, j=interpreted, Vv=VM code, C=native code)
+V  [libjvm.so+0x748540]
+V  [libjvm.so+0x3bc514]
+V  [libjvm.so+0x16d72c]
+V  [libjvm.so+0x13f3a8]
+V  [libjvm.so+0x1bfc5c]
+V  [libjvm.so+0x5df0ec]
+V  [libjvm.so+0x1f3080]
+V  [libjvm.so+0x38b7e0]
+V  [libjvm.so+0x1ef3b8]
+V  [libjvm.so+0x1efc14]
+V  [libjvm.so+0x2707d8]
+V  [libjvm.so+0x6f8344]
+V  [libjvm.so+0x6394c4]
+
+
+Current CompileTask:
+C2:535      com.mathworks.mlwidgets.explorer.control.DirectoryDocumentListing.getDocumentChanges(Ljava/util/Collection;Ljava/util/Collection;Ljava/util/Collection;Ljava/util/Collection;Ljava/util/Collection;)V (385 bytes)
+
+
+---------------  P R O C E S S  ---------------
+
+Java Threads: ( => current thread )
+  0x0000000100fd9800 JavaThread "Prefs Updater" daemon [_thread_blocked, id=45, stack(0xffffffff44700000,0xffffffff44800000)]
+  0x0000000100c4a800 JavaThread "Thread-16" [_thread_blocked, id=41, stack(0xffffffff44900000,0xffffffff44a00000)]
+  0x000000010072b400 JavaThread "Thread-15" [_thread_blocked, id=39, stack(0xffffffff44f00000,0xffffffff45000000)]
+  0x00000001014b9400 JavaThread "Active Reference Queue Daemon" daemon [_thread_blocked, id=38, stack(0xffffffff45500000,0xffffffff45600000)]
+  0x0000000100c74800 JavaThread "Timer-9" daemon [_thread_blocked, id=37, stack(0xffffffff45700000,0xffffffff45800000)]
+  0x0000000100ea3c00 JavaThread "FelixPackageAdmin" daemon [_thread_blocked, id=36, stack(0xffffffff45b00000,0xffffffff45c00000)]
+  0x0000000100c4a000 JavaThread "FelixStartLevel" daemon [_thread_blocked, id=35, stack(0xffffffff45900000,0xffffffff45a00000)]
+  0x00000001014ba000 JavaThread "FelixDispatchQueue" [_thread_blocked, id=34, stack(0xffffffff45f00000,0xffffffff46000000)]
+  0x000000010054d800 JavaThread "Timer-1" [_thread_in_vm, id=25, stack(0xffffffff46300000,0xffffffff46400000)]
+  0x0000000100d23000 JavaThread "TimerQueue" daemon [_thread_blocked, id=24, stack(0xffffffff47000000,0xffffffff47100000)]
+  0x0000000100cdac00 JavaThread "AWT-EventQueue-0" [_thread_in_native, id=23, stack(0xffffffff47600000,0xffffffff47700000)]
+  0x0000000100ca4c00 JavaThread "AWT-Shutdown" [_thread_blocked, id=22, stack(0xffffffff47800000,0xffffffff47900000)]
+  0x0000000100b4d000 JavaThread "AWT-XAWT" daemon [_thread_blocked, id=20, stack(0xffffffff48800000,0xffffffff48900000)]
+  0x0000000100b00400 JavaThread "Java2D Disposer" daemon [_thread_blocked, id=19, stack(0xffffffff48a00000,0xffffffff48b00000)]
+  0x00000001005fcc00 JavaThread "Timer-0" [_thread_blocked, id=18, stack(0xffffffff4d600000,0xffffffff4d700000)]
+  0x00000001004ffc00 JavaThread "JMI Unnamed Thread" [_thread_in_native, id=4, stack(0xffffffff6a800000,0xffffffff6a9fc000)]
+  0x00000001003b8800 JavaThread "Low Memory Detector" daemon [_thread_blocked, id=16, stack(0xffffffff4f000000,0xffffffff4f100000)]
+=>0x00000001003b6000 JavaThread "CompilerThread1" daemon [_thread_in_native, id=15, stack(0xffffffff4f200000,0xffffffff4f300000)]
+  0x00000001003b2800 JavaThread "CompilerThread0" daemon [_thread_blocked, id=14, stack(0xffffffff4f400000,0xffffffff4f500000)]
+  0x00000001003b1800 JavaThread "Attach Listener" daemon [_thread_blocked, id=12, stack(0xffffffff4f800000,0xffffffff4f900000)]
+  0x0000000100394800 JavaThread "Finalizer" daemon [_thread_blocked, id=11, stack(0xffffffff4fb00000,0xffffffff4fc00000)]
+  0x000000010038bc00 JavaThread "Reference Handler" daemon [_thread_blocked, id=10, stack(0xffffffff4fd00000,0xffffffff4fe00000)]
+  0x000000010026b800 JavaThread "main" [_thread_in_native, id=2, stack(0xffffffff6ac00000,0xffffffff6b400000)]
+
+Other Threads:
+  0x0000000100382400 VMThread [stack: 0xffffffff4ff00000,0xffffffff50000000] [id=9]
+  0x00000001003e5c00 WatcherThread [stack: 0xffffffff4ee00000,0xffffffff4ef00000] [id=17]
+
+VM state:not at safepoint (normal execution)
+
+VM Mutex/Monitor currently owned by a thread: None
+
+Heap
+ PSYoungGen      total 40640K, used 18127K [0xffffffff61800000, 0xffffffff64c00000, 0xffffffff64c00000)
+  eden space 28096K, 57% used [0xffffffff61800000,0xffffffff627d71c0,0xffffffff63370000)
+  from space 12544K, 15% used [0xffffffff63370000,0xffffffff6354ccf0,0xffffffff63fb0000)
+  to   space 12608K, 0% used [0xffffffff63fb0000,0xffffffff63fb0000,0xffffffff64c00000)
+ PSOldGen        total 49152K, used 34124K [0xffffffff58400000, 0xffffffff5b400000, 0xffffffff61800000)
+  object space 49152K, 69% used [0xffffffff58400000,0xffffffff5a553248,0xffffffff5b400000)
+ PSPermGen       total 57344K, used 54377K [0xffffffff50400000, 0xffffffff53c00000, 0xffffffff58400000)
+  object space 57344K, 94% used [0xffffffff50400000,0xffffffff5391a510,0xffffffff53c00000)
+
+Dynamic libraries:
+0x0000000100000000 	/opt/matlab/matlab2009b/bin/sol64/MATLAB
+0xffffffff7f200000 	/opt/matlab/matlab2009b/bin/sol64/libut.so
+0xffffffff7f000000 	/opt/matlab/matlab2009b/bin/sol64/libmwfl.so
+0xffffffff7ed00000 	/opt/matlab/matlab2009b/bin/sol64/libmx.so
+0xffffffff7eb00000 	/opt/matlab/matlab2009b/bin/sol64/libmwmpath.so
+0xffffffff7e700000 	/opt/matlab/matlab2009b/bin/sol64/libmwservices.so
+0xffffffff7e500000 	/opt/matlab/matlab2009b/bin/sol64/libmwjmi.so
+0xffffffff7e200000 	/opt/matlab/matlab2009b/bin/sol64/libmwbridge.so
+0xffffffff7e000000 	/opt/matlab/matlab2009b/bin/sol64/libmwmcr.so
+0xffffffff7de00000 	/opt/matlab/matlab2009b/bin/sol64/libmwm_dispatcher.so
+0xffffffff7d400000 	/opt/matlab/matlab2009b/bin/sol64/libmwm_interpreter.so
+0xffffffff7d200000 	/lib/64/libm.so.2
+0xffffffff7d000000 	/lib/64/libc.so.1
+0xffffffff7cd00000 	/opt/matlab/matlab2009b/sys/os/sol64/libstlport.so.1
+0xffffffff7ca00000 	/lib/64/librt.so.1
+0xffffffff7c800000 	/usr/lib/64/libCrun.so.1
+0xffffffff7c700000 	/lib/64/libthread.so.1
+0xffffffff7f400000 	/lib/64/libdl.so.1
+0xffffffff7c300000 	/opt/matlab/matlab2009b/bin/sol64/libexpat.so.1
+0xffffffff7c100000 	/opt/matlab/matlab2009b/bin/sol64/libicudata.so.40
+0xffffffff7be00000 	/opt/matlab/matlab2009b/bin/sol64/libicuuc.so.40
+0xffffffff7bb00000 	/opt/matlab/matlab2009b/bin/sol64/libicui18n.so.40
+0xffffffff7b800000 	/opt/matlab/matlab2009b/bin/sol64/libicuio.so.40
+0xffffffff7b600000 	/opt/matlab/matlab2009b/bin/sol64/libboost_thread-sw-mt-1_36.so.1.36.0
+0xffffffff7b400000 	/opt/matlab/matlab2009b/bin/sol64/libboost_signals-sw-mt-1_36.so.1.36.0
+0xffffffff7b100000 	/opt/matlab/matlab2009b/bin/sol64/libboost_system-sw-mt-1_36.so.1.36.0
+0xffffffff7af00000 	/usr/lib/64/libdemangle.so.1
+0xffffffff7ad00000 	/usr/lib/64/libz.so
+0xffffffff7ab00000 	/opt/matlab/matlab2009b/bin/sol64/libmwmlutil.so
+0xffffffff7a800000 	/opt/matlab/matlab2009b/bin/sol64/libboost_filesystem-sw-mt-1_36.so.1.36.0
+0xffffffff7a600000 	/opt/matlab/matlab2009b/bin/sol64/libmwmathutil.so
+0xffffffff7a400000 	/lib/64/libsocket.so.1
+0xffffffff7a100000 	/lib/64/libnsl.so.1
+0xffffffff7c500000 	/lib/64/libintl.so.1
+0xffffffff79e00000 	/lib/64/libcurses.so.1
+0xffffffff79d00000 	/lib/64/libxnet.so.1
+0xffffffff79a00000 	/opt/matlab/matlab2009b/bin/sol64/libmwiqm.so
+0xffffffff79800000 	/opt/matlab/matlab2009b/bin/sol64/libmex.so
+0xffffffff78c00000 	/opt/matlab/matlab2009b/bin/sol64/libmwm_parser.so
+0xffffffff78a00000 	/opt/matlab/matlab2009b/bin/sol64/libmwudd.so
+0xffffffff78800000 	/opt/matlab/matlab2009b/bin/sol64/libmwmlint.so
+0xffffffff78600000 	/opt/matlab/matlab2009b/bin/sol64/libmwmtok.so
+0xffffffff78000000 	/opt/matlab/matlab2009b/bin/sol64/libmwmcos.so
+0xffffffff77d00000 	/opt/matlab/matlab2009b/bin/sol64/libmwgui.so
+0xffffffff77000000 	/opt/matlab/matlab2009b/bin/sol64/libmwhg.so
+0xffffffff76e00000 	/opt/matlab/matlab2009b/bin/sol64/libuij.so
+0xffffffff76c00000 	/opt/matlab/matlab2009b/bin/sol64/libmwudd_mi.so
+0xffffffff76a00000 	/opt/matlab/matlab2009b/bin/sol64/libmwuinone.so
+0xffffffff76800000 	/opt/matlab/matlab2009b/bin/sol64/libmwm_ir.so
+0xffffffff76500000 	/opt/matlab/matlab2009b/bin/sol64/libmwuix.so
+0xffffffff76200000 	/opt/matlab/matlab2009b/bin/sol64/libmwxmlcore.so
+0xffffffff76000000 	/opt/matlab/matlab2009b/bin/sol64/libboost_regex-sw-mt-1_36.so.1.36.0
+0xffffffff75800000 	/opt/matlab/matlab2009b/bin/sol64/libxerces-c.so.27
+0xffffffff75600000 	/opt/matlab/matlab2009b/bin/sol64/libmat.so
+0xffffffff75400000 	/opt/matlab/matlab2009b/bin/sol64/libmwprofiler.so
+0xffffffff75200000 	/opt/matlab/matlab2009b/bin/sol64/libmwmathrng.so
+0xffffffff75000000 	/opt/matlab/matlab2009b/bin/sol64/libmwmlib.so
+0xffffffff74d00000 	/opt/matlab/matlab2009b/bin/sol64/libmwm_pcodeio.so
+0xffffffff74b00000 	/opt/matlab/matlab2009b/bin/sol64/libmwm_pcodegen.so
+0xffffffff74800000 	/lib/64/libm.so.1
+0xffffffff74600000 	/lib/64/libaio.so.1
+0xffffffff74400000 	/lib/64/libmd5.so.1
+0xffffffff75e00000 	/lib/64/libpthread.so.1
+0xffffffff74000000 	/opt/matlab/matlab2009b/bin/sol64/libmwir_xfmr.so
+0xffffffff73c00000 	/opt/matlab/matlab2009b/bin/sol64/libmwhardcopy.so
+0xffffffff73a00000 	/opt/matlab/matlab2009b/bin/sol64/libmwmathlinalg.so
+0xffffffff73700000 	/opt/matlab/matlab2009b/bin/sol64/libmwhgdatatypes.so
+0xffffffff73500000 	/opt/matlab/matlab2009b/bin/sol64/libmwhgutils.so
+0xffffffff73200000 	/opt/matlab/matlab2009b/bin/sol64/libmwlapack.so
+0xffffffff72e00000 	/usr/lib/64/libXm.so.4
+0xffffffff72b00000 	/usr/lib/64/libXt.so.4
+0xffffffff72700000 	/usr/lib/64/libX11.so.4
+0xffffffff72400000 	/usr/lib/64/libXpm.so.4
+0xffffffff72100000 	/opt/matlab/matlab2009b/bin/sol64/libhdf5_hl.so.0
+0xffffffff71c00000 	/opt/matlab/matlab2009b/bin/sol64/libhdf5.so.5
+0xffffffff71400000 	/opt/matlab/matlab2009b/bin/sol64/libmwmathelem.so
+0xffffffff71200000 	/opt/matlab/matlab2009b/bin/sol64/libmwmathcore.so
+0xffffffff71000000 	/opt/matlab/matlab2009b/bin/sol64/libmwblas.so
+0xffffffff70e00000 	/opt/matlab/matlab2009b/bin/sol64/libmwamd.so
+0xffffffff70b00000 	/opt/matlab/matlab2009b/bin/sol64/libmwcholmod.so
+0xffffffff70900000 	/opt/matlab/matlab2009b/bin/sol64/libmwcolamd.so
+0xffffffff70700000 	/opt/matlab/matlab2009b/bin/sol64/libmwcsparse.so
+0xffffffff70500000 	/opt/matlab/matlab2009b/bin/sol64/libmwma57.so
+0xffffffff70200000 	/opt/matlab/matlab2009b/bin/sol64/libmwrookfastbp.so
+0xffffffff70000000 	/opt/matlab/matlab2009b/bin/sol64/libmwspqr.so
+0xffffffff6fe00000 	/opt/matlab/matlab2009b/bin/sol64/libmwumfpack.so
+0xffffffff6fb00000 	/opt/matlab/matlab2009b/bin/sol64/libmwbinder.so
+0xffffffff6f800000 	/usr/openwin/lib/64/libXext.so.0
+0xffffffff6f500000 	/opt/matlab/matlab2009b/sys/os/sol64/libf77compat.so.1
+0xffffffff6f200000 	/opt/matlab/matlab2009b/sys/os/sol64/libfsu.so.1
+0xffffffff6f000000 	/opt/matlab/matlab2009b/sys/os/sol64/libfui.so.2
+0xffffffff6ee00000 	/opt/matlab/matlab2009b/sys/os/sol64/libsunmath.so.1
+0xffffffff7a000000 	/platform/SUNW,Sun-Fire-280R/lib/sparcv9/libc_psr.so.1
+0xffffffff6e500000 	/lib/64/libmp.so.2
+0xffffffff6e300000 	/lib/64/libscf.so.1
+0xffffffff6e100000 	/lib/64/libdoor.so.1
+0xffffffff6de00000 	/lib/64/libuutil.so.1
+0xffffffff6db00000 	/usr/openwin/lib/64/libXtsol.so.1
+0xffffffff6d900000 	/lib/64/libtsol.so.2
+0xffffffff6d600000 	/lib/64/libsecdb.so.1
+0xffffffff6d400000 	/lib/64/libcmd.so.1
+0xffffffff6d100000 	/usr/openwin/lib/sparcv9/libSM.so.6
+0xffffffff6ce00000 	/usr/openwin/lib/sparcv9/libICE.so.6
+0xffffffff6cb00000 	/lib/64/libmtsk.so.1
+0xffffffff6a500000 	/lib/64/nss_nis.so.1
+0xffffffff69e00000 	/platform/SUNW,Sun-Fire-280R/lib/sparcv9/libmd5_psr.so.1
+0xffffffff69c00000 	/opt/matlab/matlab2009b/sys/java/jre/sol64/jre/lib/sparcv9/libjava.so
+0xffffffff69000000 	/opt/matlab/matlab2009b/sys/java/jre/sol64/jre/lib/sparcv9/server/libjvm.so
+0xffffffff68e00000 	/opt/matlab/matlab2009b/sys/java/jre/sol64/jre/lib/sparcv9/libverify.so
+0xffffffff6a700000 	/usr/lib/64/libsched.so.1
+0xffffffff68800000 	/opt/matlab/matlab2009b/sys/java/jre/sol64/jre/lib/sparcv9/native_threads/libhpi.so
+0xffffffff68500000 	/opt/matlab/matlab2009b/sys/java/jre/sol64/jre/lib/sparcv9/libzip.so
+0xffffffff4dc00000 	/opt/matlab/matlab2009b/bin/sol64/libnativejava.so
+0xffffffff4da00000 	/opt/matlab/matlab2009b/bin/sol64/libnativejmi.so
+0xffffffff49c00000 	/opt/matlab/matlab2009b/bin/sol64/libnativeservices.so
+0xffffffff49800000 	/opt/matlab/matlab2009b/sys/java/jre/sol64/jre/lib/sparcv9/libawt.so
+0xffffffff49600000 	/opt/matlab/matlab2009b/sys/java/jre/sol64/jre/lib/sparcv9/xawt/libmawt.so
+0xffffffff49300000 	/usr/openwin//lib/sparcv9/libXtst.so.1
+0xffffffff48f00000 	/usr/openwin//lib/sparcv9/libXi.so.5
+0xffffffff48d00000 	/opt/matlab/matlab2009b/sys/java/jre/sol64/jre/lib/sparcv9/libfontmanager.so
+0xffffffff48400000 	/opt/matlab/matlab2009b/sys/java/jre/sol64/jre/lib/sparcv9/libj2pkcs11.so
+0xffffffff48100000 	/usr/lib/sparcv9/libpkcs11.so
+0xffffffff47f00000 	/usr/lib/64/libcryptoutil.so.1
+0xffffffff47c00000 	/usr/lib/security/64/pkcs11_softtoken.so
+0xffffffff47300000 	/opt/matlab/matlab2009b/bin/sol64/libnativelmgr.so
+0xffffffff46d00000 	/opt/matlab/matlab2009b/sys/java/jre/sol64/jre/lib/sparcv9/libjpeg.so
+0xffffffff46b00000 	/opt/matlab/matlab2009b/sys/java/jre/sol64/jre/lib/sparcv9/libnet.so
+0xffffffff46900000 	/opt/matlab/matlab2009b/sys/java/jre/sol64/jre/lib/sparcv9/libnio.so
+0xffffffff46500000 	/opt/matlab/matlab2009b/bin/sol64/libinstutil.so
+0xffffffff3d100000 	/opt/matlab/matlab2009b/bin/sol64/libnativecmdwin.so
+0xffffffff45200000 	/opt/matlab/matlab2009b/bin/sol64/libnativemlint.so
+0xffffffff44c00000 	/opt/matlab/matlab2009b/bin/sol64/libnativelex.so
+0xffffffff44300000 	/opt/matlab/matlab2009b/sys/java/jre/sol64/jre/lib/sparcv9/libdcpr.so
+0xffffffff43900000 	/opt/matlab/matlab2009b/bin/sol64/libmwbuiltins.so
+0xffffffff43400000 	/opt/matlab/matlab2009b/bin/sol64/libmwhgbuiltins.so
+0xffffffff42e00000 	/opt/matlab/matlab2009b/toolbox/matlab/timefun/private/dtstr2dtnummx.mexs64
+0xffffffff42b00000 	/opt/matlab/matlab2009b/toolbox/matlab/timefun/private/dtstr2dtvecmx.mexs64
+0xffffffff42900000 	/opt/matlab/matlab2009b/bin/sol64/libnativehg.so
+0xffffffff42500000 	/opt/matlab/matlab2009b/sys/java/jre/sol64/jre/lib/sparcv9/libjawt.so
+0xffffffff40000000 	/opt/matlab/matlab2009b/sys/os/sol64/libsunperf.so
+0xffffffff3fe00000 	/usr/lib/64/libpicl.so.1
+0xffffffff3e000000 	/opt/matlab/matlab2009b/sys/os/sol64/prod/lib/v9a/../cpu/sparcv9+vis2/sparcv9/libsunperf_isa.so.7
+
+VM Arguments:
+jvm_args: -Xms64m -XX:NewRatio=3 -XX:MaxPermSize=128m -Xmx196m -XX:MaxDirectMemorySize=2147400000 -Djava.util.prefs.PreferencesFactory=com.mathworks.util.DisabledPreferencesFactory -XX:+AllowUserSignalHandlers -Xrs -Djava.library.path=/opt/matlab/matlab2009b/bin/sol64 vfprintf abort -Dfile.encoding=US-ASCII 
+java_command: <unknown>
+Launcher Type: generic
+
+Environment Variables:
+PATH=/opt/fsl/bin:/opt/fsl/bin:/usr/bin:/bin:/usr/bin:/usr/ccs/bin:/usr/ccs/lib:/opt/magres/bin:/opt/magres/spm99:/opt/magres/spm5:/usr/magres/fmri/bin:/opt/SUNWspro/bin:/usr/ucb:/usr/ccs/bin:/opt/Acrobat5/bin:/opt/fsl/bin:/usr/sbin:/usr/openwin/bin:/opt/magres/bin:/opt/magres/netscape:/usr/local/bin:/opt/idl/bin:/etc:/usr/lib/nis:/opt/xwc/bin:/usr/spice/bin:/opt/Analyze/bin:/home/francis/c/tasteolf/:/home/francis/c:/home/clare/bin:/home/morgan/bin:/opt/medx/bin:/home/francis/Office51/bin:/opt/Office51/bin:/usr/sbin:/usr/proc/bin:/opt/SUNWns6:/usr/dt/bin:/opt/sfw/bin:/usr/magres/bin:/opt/xwc/bin:/opt/maple/bin:/opt/medx/bin:/opt/texmf/bin:/home/francis/bin:/home/francis/csh:/home/francis/c/bin:/home/francis/perl/bin:/opt/Acrobat4/bin:/usr/CM/bin:/usr/lib/lp/postscript:/opt/MPxanim/bin/:/opt/magres/spm2/toolbox/aal:/opt/medx/bin:/home/francis/csh:.:/bin:/usr/bin:/usr/ccs/bin:/usr/ccs/lib:/opt/magres/bin:/opt/magres/spm99:/opt/magres/spm5:/usr/magres/fmri/bin:/opt/SUNWspro/bin:/usr/ucb:/usr/ccs/bin:/opt/Acrobat5/bin:/opt/fsl/bin:/usr/sbin:/usr/openwin/bin:/opt/magres/bin:/opt/magres/netscape:/usr/local/bin:/opt/idl/bin:/etc:/usr/lib/nis:/opt/xwc/bin:/usr/spice/bin:/opt/Analyze/bin:/home/francis/c/tasteolf/:/home/francis/c:/home/clare/bin:/home/morgan/bin:/opt/medx/bin:/home/francis/Office51/bin:/opt/Office51/bin:/usr/sbin:/usr/proc/bin:/opt/SUNWns6:/usr/dt/bin:/opt/sfw/bin:/usr/magres/bin:/opt/xwc/bin:/opt/maple/bin:/opt/medx/bin:/opt/texmf/bin:/home/francis/bin:/home/francis/csh:/home/francis/c/bin:/home/francis/perl/bin:/opt/Acrobat4/bin:/usr/CM/bin:/usr/lib/lp/postscript:/opt/MPxanim/bin/:/opt/magres/spm2/toolbox/aal:/opt/medx/bin:/home/francis/csh:.
+LD_LIBRARY_PATH=/opt/matlab/matlab2009b/sys/os/sol64:/opt/matlab/matlab2009b/bin/sol64:/opt/matlab/matlab2009b/extern/lib/sol64:/opt/matlab/matlab2009b/sys/java/jre/sol64/jre/lib/sparcv9/native_threads:/opt/matlab/matlab2009b/sys/java/jre/sol64/jre/lib/sparcv9/server:/opt/matlab/matlab2009b/sys/java/jre/sol64/jre/lib/sparcv9:/usr/local/lib:/opt/SUNWspro/lib:/usr/openwin/lib:/usr/IDL/idl/bin:/usr/dt/lib:/home/peters/c/stroke/lib
+SHELL=/bin/csh
+DISPLAY=localhost:15.0
+ARCH=sol64
+
+Signal Handlers:
+SIGSEGV: [libjvm.so+0x749140], sa_mask[0]=0xffbffeff, sa_flags=0x00000008
+SIGBUS: [libjvm.so+0x749140], sa_mask[0]=0xffbffeff, sa_flags=0x00000008
+SIGFPE: [libmwmcr.so+0x6bcfc], sa_mask[0]=0x00880002, sa_flags=0x00000008
+SIGPIPE: [libjvm.so+0x1e33a0], sa_mask[0]=0xffbffeff, sa_flags=0x0000000c
+SIGXFSZ: [libjvm.so+0x1e33a0], sa_mask[0]=0xffbffeff, sa_flags=0x0000000c
+SIGILL: [libmwmcr.so+0x6bcfc], sa_mask[0]=0x00880002, sa_flags=0x00000008
+SIGUSR1: SIG_DFL, sa_mask[0]=0x00000000, sa_flags=0x00000000
+SIGUSR2: SIG_DFL, sa_mask[0]=0x00000000, sa_flags=0x00000000
+SIGQUIT: [libmwmcr.so+0x6bcfc], sa_mask[0]=0x00880002, sa_flags=0x00000008
+SIGHUP: SIG_DFL, sa_mask[0]=0x00000000, sa_flags=0x00000000
+SIGINT: [libmwmcr.so+0x6c124], sa_mask[0]=0x00880002, sa_flags=0x00000008
+SIGTERM: SIG_DFL, sa_mask[0]=0x00000000, sa_flags=0x00000000
+SIG39: [libjvm.so+0x63e928], sa_mask[0]=0x00000000, sa_flags=0x00000008
+SIG40: [libjvm.so+0x1e33a0], sa_mask[0]=0xffbffeff, sa_flags=0x0000000c
+
+
+---------------  S Y S T E M  ---------------
+
+OS:                       Solaris 10 11/06 s10s_u3wos_10 SPARC
+           Copyright 2006 Sun Microsystems, Inc.  All Rights Reserved.
+                        Use is subject to license terms.
+                           Assembled 14 November 2006
+
+uname:SunOS 5.10 Generic_118833-33 sun4u  (T2 libthread)
+rlimit: STACK 8192k, CORE 1k, NOFILE 512, AS infinity
+load average:0.11 0.27 0.27
+
+CPU:total 2 has_v8, has_v9, has_vis1, has_vis2, is_ultra3
+
+Memory: 8k page, physical 4194304k(264000k free)
+
+vm_info: Java HotSpot(TM) 64-Bit Server VM (11.2-b01) for solaris-sparc JRE (1.6.0_12-b04), built on Jan 17 2009 01:31:15 by "" with Workshop 5.8
+
+time: Sat May 15 07:11:24 2010
+elapsed time: 354 seconds
+
