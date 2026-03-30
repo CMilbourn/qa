@@ -45,7 +45,7 @@ end
 if (isstr(fname))
   % Create a proper file name
   % Check name and file type.
-  [pathstr,bname,ext,ver]=fileparts(fname);
+  [pathstr,bname,ext]=fileparts(fname);
   
   switch (ext)
    case '.nii'  

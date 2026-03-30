@@ -158,18 +158,36 @@ if (loadSize(1:3)==headerdim(1:3))
   switch (hdr.matlab_datatype)
    case {'complex64','complex128'}
     [cdata,count]=fread(fPtr,dataSize*2,readformat);
-    if (count~=dataSize*2) 
-      fclose(fPtr);
-      error(['Error reading file ' hdr.img_name]);
+    if (count~=dataSize*2)
+      % Tolerate truncated files by keeping only complete volumes.
+      volElems = prod(loadSize(1:3))*2;
+      completeVols = floor(count/volElems);
+      if completeVols < 1
+        fclose(fPtr);
+        error(['Error reading file ' hdr.img_name]);
+      end
+      warning('(cbiReadNifti) Truncated image data in %s; keeping first %d complete volume(s).', hdr.img_name, completeVols);
+      cdata = cdata(1:completeVols*volElems);
+      loadSize(4) = completeVols;
+      hdr.dim(5) = completeVols;
     end
-    data=complex(cdata(1:2:dataSize*2-1),cdata(2:2:dataSize*2));
+    data=complex(cdata(1:2:end-1),cdata(2:2:end));
     clear cdata;
    otherwise
     % Load entire file
     [data,count]=fread(fPtr,dataSize,readformat);
-    if (count~=dataSize) 
-      fclose(fPtr);
-      error(['Error reading file ' hdr.img_name]);
+    if (count~=dataSize)
+      % Tolerate truncated files by keeping only complete volumes.
+      volElems = prod(loadSize(1:3));
+      completeVols = floor(count/volElems);
+      if completeVols < 1
+        fclose(fPtr);
+        error(['Error reading file ' hdr.img_name]);
+      end
+      warning('(cbiReadNifti) Truncated image data in %s; keeping first %d complete volume(s).', hdr.img_name, completeVols);
+      data = data(1:completeVols*volElems);
+      loadSize(4) = completeVols;
+      hdr.dim(5) = completeVols;
     end
   end
   data=reshape(data,loadSize');

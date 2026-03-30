@@ -643,16 +643,24 @@ def process_data_nophase(imgm_cla, imgm_affine, core_filename, output_dir, mask_
     #### tSNR per unit time ######
     
     # Determine TR (RepetitionTime) from multiple sources
+    tr_from_override = TR is not None
+    tr_from_json = False
     if TR is None and nifti_path is not None:
         # Try to read TR from JSON sidecar file
         TR = get_tr_from_json(nifti_path)
+        tr_from_json = TR is not None
     
     if TR is None:
         # Fall back to default TR if not found in JSON
         TR = 1.4  # Default for MB3 BOLD data
         print(f"Using default TR = {TR}s (no JSON file found or RepetitionTime not specified)")
     else:
-        print(f"Using TR = {TR}s from JSON metadata")
+        if tr_from_override:
+            print(f"Using TR override = {TR}s")
+        elif tr_from_json:
+            print(f"Using TR = {TR}s from JSON metadata")
+        else:
+            print(f"Using TR = {TR}s")
     
     # Get TE from JSON sidecar
     TE = None
@@ -1605,9 +1613,12 @@ if __name__ == "__main__":
     # ===== AUTO-DISCOVERY MODE =====
     #### INPUT DIRECTORY HERE ####
     # Auto-discover 4D datasets in target_dir (exclude 3D/short)
-    target_dir = '/Users/cmilbourn/Documents/tSNR_check_40dyn/Lily_data/pre_aqua/'
+   # target_dir = '/Users/cmilbourn/Documents/Sweet_Data/Development_Data/Sweet_Data_BIDS_Dev/INGENIA_phantom/'
+    target_dir = '/Users/cmilbourn/Documents/Sweet_Data/Development_Data/nifti/INGENIA/sub010_dev/sweet_sub10_tsnr/'
     candidate_files = sorted(glob(os.path.join(target_dir, '*.nii*')))
     dataset_configs = []
+    # Force TR for this run mode (seconds). Set to None to use JSON/default behavior.
+    default_tr_override = 2.0
     # Force-include specific files even if 3D
     force_include = []
     
@@ -1627,13 +1638,13 @@ if __name__ == "__main__":
         except Exception as e:
             print(f"Skipping (load error) {fpath}: {e}")
             continue
-        dataset_configs.append({ 'path': fpath, 'TR': None })
+        dataset_configs.append({ 'path': fpath, 'TR': default_tr_override })
     
     # Add forced files (if exist) regardless of 4D check
     for fpath in force_include:
         if os.path.exists(fpath) and all(d['path'] != fpath for d in dataset_configs):
             print(f"Force-including (may be 3D): {os.path.basename(fpath)}")
-            dataset_configs.append({ 'path': fpath, 'TR': None })
+            dataset_configs.append({ 'path': fpath, 'TR': default_tr_override })
     # ===== END AUTO-DISCOVERY MODE =====
     
     # Verify files exist

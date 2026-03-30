@@ -62,6 +62,10 @@
 % outputs as 'nii.gz' if input is 'nii.gz' (previously only 'nii' or 'hdr/img' supported)
 function [  ]=de2_V1( fileName_e1, fileName_e2, echoTimes, varargin )
 
+% Accept both char and string inputs for modern MATLAB compatibility.
+if isstring(fileName_e1), fileName_e1 = char(fileName_e1); end
+if isstring(fileName_e2), fileName_e2 = char(fileName_e2); end
+
 % ----------------------------------------------------------------------
 % this function is based on a script 
 % combining_2echos_spm_noloops_sue
@@ -84,7 +88,7 @@ validInputArgs = {'method', ... % which combination method (1=T2* weighed, 2=SNR
 eval(evalargs(varargin,[],[],validInputArgs));
 
 % Name and path of outcoming and incoming files
-if nargin == 1 || (nargin > 2 && ischar(echoTimes))
+if nargin == 1 || (nargin > 2 && (ischar(echoTimes) || isstring(echoTimes)))
   % with the new input conventions, 0,2,3, many input args are allowed
   help de
   return
@@ -147,6 +151,8 @@ end
 % collects filename stem for saving unique output files
 pat = 'echo\d\d';
 [a,str,ext] =  fileparts(fileName_e1);
+if isstring(str), str = char(str); end
+if isstring(ext), ext = char(ext); end
 match = regexp(str, pat, 'match'); 
 % OLD - edit by CCM 20260317 -  - edit by CCM 20260317 - : filestem = stripext(str,match{1});
 if isempty(match)
@@ -251,11 +257,12 @@ if method==1 || method==4
     
     % get noise level if not passed
     if ieNotDefined('noiseCutoff') || numel(noiseCutoff) >1
-      noiseCutoff = input('Input estimate for noise level for use in T2* calculation\n (manually examine area of 2nd echo image outside the head in to estimate value - 10000 recommended for general use): ');
+      % OLD: noiseCutoff = input('Input estimate for noise level for use in T2* calculation\n (manually examine area of 2nd echo image outside the head in to estimate value - 10000 recommended for general use): ');
+      noiseCutoff = 10000;
+      fprintf('No noiseCutoff provided; using default %.0f\n', noiseCutoff);
     end
     if isempty(noiseCutoff), noiseCutoff=0;end
     fprintf('Using noise cutoff level %.2f\n', noiseCutoff)
-    
     % set T2* limit if not specified earlier
     if ieNotDefined('T2slimit'), T2slimit = 1000;end
     fprintf('Using upper T2* limit of %d ms\n', T2slimit);
@@ -279,14 +286,16 @@ if method==1 || method==4
     
     % preallocate space for the combined 4D image
     tc4d = zeros(xdim, ydim, zdim, tvols);
+    progressStep = max(1, floor(tvols/20));
     
     % Calcuate T2* weighted combination
     fprintf('Doing weighted combination for echo 1...')
     for iDyn = 1:tvols;
       tc4d(:,:,:,iDyn)=tc4d_e1(:,:,:,iDyn).*(TE1./T2s_av)...
           .*exp(-TE1./T2s_av)+tc4d_e2(:,:,:,iDyn).*(TE2./T2s_av).*exp(-TE2./T2s_av);
-      if (rem(iDyn/tvols,.05)==0)
-            fprintf('%i%%...',100*(iDyn/tvols))
+      % OLD: if (rem(iDyn/tvols,.05)==0)
+      if (mod(iDyn,progressStep)==0) || (iDyn==tvols)
+        fprintf('%i%%...',round(100*(iDyn/tvols)))
       end
     end
     fprintf('Completed!\n')
@@ -338,8 +347,9 @@ if method==1 || method==4
     fprintf('Calculating 4D T2* image...')
     for iDyn =1:tvols     
         T2s(:,:,:,iDyn)=(TE2-TE1)./(log(tc4d_e1(:,:,:,iDyn).*(tc4d_e1(:,:,:,iDyn)>noiseCutoff))-log(tc4d_e2(:,:,:,iDyn).*(tc4d_e2(:,:,:,iDyn)>noiseCutoff)));
-        if (rem(iDyn/tvols,.05)==0)
-            fprintf('%i%%...',100*(iDyn/tvols))
+      % OLD: if (rem(iDyn/tvols,.05)==0)
+      if (mod(iDyn,progressStep)==0) || (iDyn==tvols)
+        fprintf('%i%%...',round(100*(iDyn/tvols)))
         end
     end
     fprintf('Completed!\n')
