@@ -1,15 +1,27 @@
 #!/usr/bin/env python
+
+#qa_run_nophase_V10_multisubj_MASK_40dyn.py
+# example run line: source venv/bin/activate && python qa_run_nophase_V12_MASK_40dyn_V6.py
+# REQUIREMENTS: conda install -y numpy matplotlib nibabel scipy python-pptx pandas
+# REQUIREMENTS (recommended venv):
+#   /opt/homebrew/bin/python3 -m venv /Users/cmilbourn/Documents/GitHub/qa/venv
+#   /Users/cmilbourn/Documents/GitHub/qa/venv/bin/pip install numpy matplotlib nibabel scipy python-pptx pillow scikit-learn pandas pdfplumber openpyxl
+# Alternative (system install):
+#   /opt/homebrew/bin/python3 -m pip install numpy matplotlib nibabel scipy python-pptx pillow pandas pdfplumber openpyxl
+# run for fmri ge standard plus edits 202600122 data
 # coding: utf-8
 # qa_run_nophase.py based on qa_run_nophase.ipynb  
 # example run line: python qa_run_nophase_V9_multisubj_MASK_30dyn.py
 # 20251218 add the run for running the tsnr round what ever it is now with Sue F
 #reorder_qa_pptx_by_type.py
+# 20251218 update to run for 20 dynamics for matching MB1
 # # Quality Assurance (QA) Python Version
 # 
 # This notebook gives example uses of image based QA metrics in `qa`.
 # 
 # A large chunk of this code has been taken from Alex Daniel's `ukat` code: https://github.com/UKRIN-MAPS/ukat.
-# 
+# # CM got this from Michael Ashgar and then made edits
+
 # We'll start with some imports and general housekeeping.
 # 
 # Reference for tSNR: https://doi.org/10.1016/j.neuroimage.2005.01.007
@@ -32,11 +44,38 @@
 # 
 # - If you have a nifti with the word `mask` in it, in the same folder, then it will find this and mask your data by it.
 
+import os
 import sys
+from pathlib import Path
+
+
+def _ensure_expected_python_environment():
+    """Re-run this script with the project venv interpreter if available.
+
+    This mirrors running `source venv/bin/activate` before execution, so
+    dependencies are consistently resolved when the script is launched with the
+    system Python.
+    """
+    # Allow opting out when needed (e.g., debugging with a custom interpreter).
+    if os.environ.get("QA_SKIP_VENV_BOOTSTRAP") == "1":
+        return
+
+    current_python = Path(sys.executable).resolve()
+    repo_root = Path(__file__).resolve().parents[1]
+    expected_python = repo_root / "venv" / "bin" / "python"
+
+    if expected_python.exists() and current_python != expected_python.resolve():
+        print(f"Switching to project venv interpreter: {expected_python}")
+        os.execv(str(expected_python), [str(expected_python), *sys.argv])
+
+
+_ensure_expected_python_environment()
+
 sys.path.append('/Users/cmilbourn/Documents/GitHub/qa/')  # ** change line to match code folder location **
 print(sys.path)
 
-import os
+import subprocess
+
 import numpy as np
 import matplotlib
 matplotlib.use('Agg')  # Use non-interactive backend
@@ -92,7 +131,7 @@ def find_mask_file(directory, mag_basename=None):
         Directory to search for masks
     mag_basename : str or None
         Basename (without extension) of the magnitude file to match, e.g.,
-        'foo_30dyn' so we can prefer 'foo_30dyn_brain_mask.nii.gz'.
+        'foo_40dyn' so we can prefer 'foo_40dyn_brain_mask.nii.gz'.
     """
     try:
         candidates = os.listdir(directory)
@@ -105,10 +144,10 @@ def find_mask_file(directory, mag_basename=None):
     # 1) Exact expected names based on mag_basename
     if mag_basename:
         expected = []
-        # If input already ends with _30dyn, prefer that exact suffix
+        # If input already ends with _40dyn, prefer that exact suffix
         expected.append(f"{mag_basename}_brain_mask.nii.gz")
         expected.append(f"{mag_basename}_brain_mask.nii")
-        # Some BET outputs may put _30dyn before suffix; we already included mag_basename
+        # Some BET outputs may put _40dyn before suffix; we already included mag_basename
         for fname in expected:
             if fname in candidates and _exists(fname):
                 return os.path.join(directory, fname)
@@ -604,16 +643,24 @@ def process_data_nophase(imgm_cla, imgm_affine, core_filename, output_dir, mask_
     #### tSNR per unit time ######
     
     # Determine TR (RepetitionTime) from multiple sources
+    tr_from_override = TR is not None
+    tr_from_json = False
     if TR is None and nifti_path is not None:
         # Try to read TR from JSON sidecar file
         TR = get_tr_from_json(nifti_path)
+        tr_from_json = TR is not None
     
     if TR is None:
         # Fall back to default TR if not found in JSON
         TR = 1.4  # Default for MB3 BOLD data
         print(f"Using default TR = {TR}s (no JSON file found or RepetitionTime not specified)")
     else:
-        print(f"Using TR = {TR}s from JSON metadata")
+        if tr_from_override:
+            print(f"Using TR override = {TR}s")
+        elif tr_from_json:
+            print(f"Using TR = {TR}s from JSON metadata")
+        else:
+            print(f"Using TR = {TR}s")
     
     # Get TE from JSON sidecar
     TE = None
@@ -881,6 +928,73 @@ def process_data_nophase(imgm_cla, imgm_affine, core_filename, output_dir, mask_
     # The End
     return metrics
 
+def process_data_single_volume(img3d, img_affine, core_filename, output_dir, mask_data=None, nifti_path=None, nifti_img=None):
+    # Minimal QA for single-volume (3D) data: mean image + montage only
+    slice_index = img3d.shape[2] // 2
+    slice_index_sag = img3d.shape[0] // 2
+    slice_index_cor = img3d.shape[1] // 2
+
+    # Mean image for 3D is the image itself
+    mean_img = img3d
+
+    fig, axs = plt.subplots(1, 1, figsize=(5, 5))
+    axs.imshow(mean_img[:, :, slice_index].T, origin='lower', cmap='gray')
+    axs.set_title(f'Mean (Slice {slice_index})')
+    axs.axis(False)
+    plt.tight_layout()
+    fig.savefig(os.path.join(output_dir, 'Mean_image.png'), dpi=300)
+    plt.close()
+
+    # Montage
+    num_slices = img3d.shape[2]
+    rows = int(np.ceil(np.sqrt(num_slices)))
+    cols = int(np.ceil(num_slices / rows))
+    figsize_scale = 2.5
+    fig = plt.figure(figsize=(cols * figsize_scale, rows * figsize_scale))
+    vmin = np.percentile(mean_img, 2)
+    vmax = np.percentile(mean_img, 98)
+    im0 = None
+    for i in range(num_slices):
+        ax = fig.add_subplot(rows, cols, i + 1)
+        im = ax.imshow(mean_img[:, :, i], cmap='gray', vmin=vmin, vmax=vmax)
+        if i == 0:
+            im0 = im
+        ax.set_title(f"Slice {i}", fontsize=8)
+        ax.axis('off')
+    fig.subplots_adjust(right=0.90)
+    cbar_ax = fig.add_axes([0.92, 0.15, 0.02, 0.7])
+    if im0 is not None:
+        fig.colorbar(im0, cax=cbar_ax, label='Intensity')
+    fig.tight_layout(pad=0.3, rect=[0, 0, 0.90, 1])
+    plt.savefig(os.path.join(output_dir, 'mean_montage.png'), dpi=300, bbox_inches='tight')
+    plt.close()
+
+    # Basic metrics stub for 3D
+    metrics = {
+        'filename': core_filename,
+        'num_timepoints': 1,
+        'num_slices': img3d.shape[2],
+        'slice_index_analyzed': slice_index,
+        'mean_volume_std': float(np.std(mean_img[mean_img > 0])) if np.any(mean_img > 0) else 0.0,
+        'mean_isnr': None,
+        'noise_value': None,
+        'mean_tsnr': None,
+        'mean_tsnr_in_mask': None,
+        'TR': get_tr_from_json(nifti_path) if nifti_path else None,
+        'TE': get_te_from_json(nifti_path) if nifti_path else None,
+        'voxel_size': get_voxel_size(nifti_img) if nifti_img is not None else None,
+        'ernst_scaling': None,
+        'mean_tsnr_per_unit_time': None,
+        'mean_tsnr_roi': None,
+        'mean_ssn': None,
+        'roi_slice': slice_index,
+        'roi_x_start': None,
+        'roi_y_start': None,
+        'roi_width': None,
+        'roi_height': None
+    }
+    return metrics
+
 def create_qa_powerpoint(output_dir, subject_name="QA Analysis"):
     """
     Create a PowerPoint presentation from QA output images
@@ -903,28 +1017,9 @@ def create_qa_powerpoint(output_dir, subject_name="QA Analysis"):
     prs.slide_height = Inches(7.5)
     
     # Define image order and titles
-    # Order: Mean/Noise, then tSNR (all datasets), then iSNR (all datasets), then other analyses
+    # Only include tSNR Montage slide
     image_config = [
-        # Mean and noise images first
-        ('Mean_image.png', 'Mean Image'),
-        ('mean_montage.png', 'Mean Image Montage - All Slices'),
-        ('masked_noise.png', 'Noise Volume Analysis'),
-        ('noise_volume_montage.png', 'Noise Volume Montage'),
-        ('masked_noise_volume_montage.png', 'Masked Noise Volume Montage'),
-        # tSNR images (all datasets show tSNR first)
-        ('tSNR_sag.png', 'tSNR Map - Sagittal View'),
-        ('tSNR_cor.png', 'tSNR Map - Coronal View'),
-        ('tSNR_per_unit_time.png', 'tSNR per Unit Time'),
-        ('tSNR_raw.png', 'Raw tSNR Map'),
         ('tSNR_montage.png', 'tSNR Montage - All Slices'),
-        ('tSNR_w_ROI_images.png', 'tSNR with ROI'),
-        # iSNR images (all datasets show iSNR after tSNR)
-        ('iSNR_sag.png', 'iSNR Map - Sagittal View'),
-        ('iSNR_cor.png', 'iSNR Map - Coronal View'),
-        ('isnr_montage.png', 'iSNR Montage - All Slices'),
-        # Other analyses
-        ('TS_images.png', 'Time Series Analysis'),
-        ('SSN.png', 'Static Spatial Noise'),
     ]
     
     # Add title slide
@@ -1235,27 +1330,9 @@ def create_combined_powerpoint(session_dir, all_output_dirs, all_metrics):
     prs.slide_height = Inches(7.5)
     
     # Define image order and titles
+    # Only include tSNR Montage slide
     image_config = [
-        # Mean and noise images first
-        ('Mean_image.png', 'Mean Image'),
-        ('mean_montage.png', 'Mean Image Montage - All Slices'),
-        ('masked_noise.png', 'Noise Volume Analysis'),
-        ('noise_volume_montage.png', 'Noise Volume Montage'),
-        ('masked_noise_volume_montage.png', 'Masked Noise Volume Montage'),
-        # tSNR images (all datasets show tSNR first)
-        ('tSNR_sag.png', 'tSNR Map - Sagittal View'),
-        ('tSNR_cor.png', 'tSNR Map - Coronal View'),
-        ('tSNR_per_unit_time.png', 'tSNR per Unit Time'),
-        ('tSNR_raw.png', 'Raw tSNR Map'),
         ('tSNR_montage.png', 'tSNR Montage - All Slices'),
-        ('tSNR_w_ROI_images.png', 'tSNR with ROI'),
-        # iSNR images (all datasets show iSNR after tSNR)
-        ('iSNR_sag.png', 'iSNR Map - Sagittal View'),
-        ('iSNR_cor.png', 'iSNR Map - Coronal View'),
-        ('isnr_montage.png', 'iSNR Montage - All Slices'),
-        # Other analyses
-        ('TS_images.png', 'Time Series Analysis'),
-        ('SSN.png', 'Static Spatial Noise'),
     ]
     
     # Add title slide
@@ -1285,6 +1362,48 @@ def create_combined_powerpoint(session_dir, all_output_dirs, all_metrics):
         p.font.size = Pt(32)
         p.font.bold = True
         p.alignment = PP_ALIGN.CENTER
+
+        # Always add a metrics slide per dataset (works for 3D and 4D)
+        if dataset_idx < len(all_metrics):
+            metrics = all_metrics[dataset_idx]
+            metrics_slide = prs.slides.add_slide(blank_slide_layout)
+            # Title
+            txBox = metrics_slide.shapes.add_textbox(Inches(0.5), Inches(0.3), Inches(9), Inches(0.6))
+            tf = txBox.text_frame
+            tf.text = f"Acquisition & QA Metrics - {dataset_name}"
+            p2 = tf.paragraphs[0]
+            p2.font.size = Pt(16)
+            p2.font.bold = True
+            p2.alignment = PP_ALIGN.CENTER
+
+            # Table content
+            rows = [
+                ("TR", f"{metrics.get('TR'):.3f} s" if isinstance(metrics.get('TR'), (int, float)) else 'N/A'),
+                ("TE", f"{metrics.get('TE')*1000:.2f} ms" if isinstance(metrics.get('TE'), (int, float)) else 'N/A'),
+                ("Voxel Size", (lambda v: f"{v[0]:.1f}×{v[1]:.1f}×{v[2]:.1f} mm" if isinstance(v, (list, tuple)) and len(v)>=3 else 'N/A')(metrics.get('voxel_size'))),
+                ("Num Timepoints", str(metrics.get('num_timepoints') if metrics.get('num_timepoints') is not None else 'N/A')),
+                ("Num Slices", str(metrics.get('num_slices') if metrics.get('num_slices') is not None else 'N/A')),
+                ("Mean Volume Std", (lambda mv: f"{mv:.2f}" if isinstance(mv, (int, float)) else 'N/A')(metrics.get('mean_volume_std'))),
+                ("Mean tSNR", (lambda mv: f"{mv:.2f}" if isinstance(mv, (int, float)) else 'N/A')(metrics.get('mean_tsnr'))),
+                ("tSNR in mask", (lambda mv: f"{mv:.2f}" if isinstance(mv, (int, float)) else 'N/A')(metrics.get('mean_tsnr_in_mask'))),
+            ]
+
+            table = metrics_slide.shapes.add_table(len(rows)+1, 2, Inches(1.0), Inches(1.0), Inches(8.0), Inches(5.0)).table
+            table.columns[0].width = Inches(3.0)
+            table.columns[1].width = Inches(5.0)
+            table.cell(0,0).text = 'Parameter'
+            table.cell(0,1).text = 'Value'
+            for c in [table.cell(0,0), table.cell(0,1)]:
+                c.text_frame.paragraphs[0].font.bold = True
+                c.text_frame.paragraphs[0].font.size = Pt(11)
+                c.text_frame.paragraphs[0].alignment = PP_ALIGN.CENTER
+            for i,(k,v) in enumerate(rows, start=1):
+                table.cell(i,0).text = k
+                table.cell(i,1).text = v
+                table.cell(i,0).text_frame.paragraphs[0].font.size = Pt(10)
+                table.cell(i,1).text_frame.paragraphs[0].font.size = Pt(10)
+                table.cell(i,0).text_frame.paragraphs[0].alignment = PP_ALIGN.CENTER
+                table.cell(i,1).text_frame.paragraphs[0].alignment = PP_ALIGN.CENTER
         
         # Add image slides for this dataset
         for img_filename, img_title in image_config:
@@ -1318,7 +1437,7 @@ def create_combined_powerpoint(session_dir, all_output_dirs, all_metrics):
                 table_width = Inches(2.5)
                 table_height = Inches(2.0)
                 
-                table = slide.shapes.add_table(5, 2, table_left, table_top, table_width, table_height).table
+                table = slide.shapes.add_table(6, 2, table_left, table_top, table_width, table_height).table
                 
                 # Set column widths
                 table.columns[0].width = Inches(1.2)
@@ -1349,16 +1468,24 @@ def create_combined_powerpoint(session_dir, all_output_dirs, all_metrics):
                 else:
                     table.cell(3, 1).text = 'N/A'
                 
-                # tSNR in mask row
-                table.cell(4, 0).text = 'tSNR in mask'
-                tsnr_mask_val = dataset_metrics.get('mean_tsnr_in_mask')
-                if tsnr_mask_val is not None:
-                    table.cell(4, 1).text = f"{tsnr_mask_val:.2f}"
+                # Mean tSNR row
+                table.cell(4, 0).text = 'Mean tSNR'
+                mean_tsnr_val = dataset_metrics.get('mean_tsnr')
+                if mean_tsnr_val is not None:
+                    table.cell(4, 1).text = f"{mean_tsnr_val:.2f}"
                 else:
                     table.cell(4, 1).text = 'N/A'
                 
+                # tSNR in mask row
+                table.cell(5, 0).text = 'tSNR in mask'
+                tsnr_mask_val = dataset_metrics.get('mean_tsnr_in_mask')
+                if tsnr_mask_val is not None:
+                    table.cell(5, 1).text = f"{tsnr_mask_val:.2f}"
+                else:
+                    table.cell(5, 1).text = 'N/A'
+                
                 # Style table cells
-                for row_idx in range(5):
+                for row_idx in range(6):
                     for col_idx in range(2):
                         cell = table.cell(row_idx, col_idx)
                         cell.text_frame.paragraphs[0].font.size = Pt(9)
@@ -1453,11 +1580,15 @@ def create_combined_powerpoint(session_dir, all_output_dirs, all_metrics):
                         # Shorten filename for display
                         value = str(value)[:40] + '...' if len(str(value)) > 40 else str(value)
                     else:
-                        try:
-                            float_val = float(value)
-                            value = f"{float_val:.2f}"
-                        except (ValueError, TypeError):
-                            value = str(value)
+                        # Format numeric values; map None to N/A
+                        if value is None or (isinstance(value, str) and value.strip().lower() == 'none'):
+                            value = 'N/A'
+                        else:
+                            try:
+                                float_val = float(value)
+                                value = f"{float_val:.2f}"
+                            except (ValueError, TypeError):
+                                value = str(value)
                     
                     table.cell(row_idx + 1, col_idx).text = value
                     table.cell(row_idx + 1, col_idx).text_frame.paragraphs[0].font.size = Pt(9)
@@ -1473,37 +1604,61 @@ def create_combined_powerpoint(session_dir, all_output_dirs, all_metrics):
     return pptx_filename
 
 if __name__ == "__main__":
-    # Explicit dataset list (run even if 3D/short)
-    dataset_configs = [
-        {
-            'path': '/Users/cmilbourn/Documents/tSNR_check_30dyn/Data2run/rawish/sub005/sub005-visit001_17976-012_fmri_MB1_ARC2_fMRI_2mm_Sweet_20251125_bold_dev_20251216143719_5.nii.gz',
-            'TR': None
-        }
-    ]
-
-    # ------------------------------------------------------------------
-    # Previous auto-discovery block (kept for reference, now disabled)
-    # ------------------------------------------------------------------
-    # target_dir = '/Users/cmilbourn/Documents/tSNR_check_30dyn/Data2run/rawish/sub005'
-    # candidate_files = sorted(glob(os.path.join(target_dir, '*.nii*')))
-    # dataset_configs = []
-    #
-    # for fpath in candidate_files:
-    #     if not fpath.endswith(('.nii', '.nii.gz')):
-    #         continue
-    #     try:
-    #         img = nib.load(fpath)
-    #         # Only keep 4D datasets with at least 10 volumes (exclude anatomical/localizer)
-    #         if img.ndim < 4 or img.shape[-1] < 10:
-    #             print(f"Skipping (not 4D or too few volumes): {os.path.basename(fpath)} shape={img.shape}")
-    #             continue
-    #     except Exception as e:
-    #         print(f"Skipping (load error) {fpath}: {e}")
-    #         continue
-    #     dataset_configs.append({ 'path': fpath, 'TR': None })
-
-
-    # Check which files exist
+    # Specify files to process directly
+    # dataset_configs = [
+    #     { 'path': '/Users/cmilbourn/Documents/Sweet_Data/Development_Data/nifti/sub001/sub001_Phase2_2samples/func/sub001-visit004-ses001_task-2S_bold.nii.gz', 'TR': None },
+    #     { 'path': '/Users/cmilbourn/Documents/Sweet_Data/Development_Data/Sweet_Data_BIDS_Dev/sub010/sub010-visit002/func/sub010-visit002-ses001_task-2S_bold.nii.gz', 'TR': None }
+    # ]
+    
+    # ===== AUTO-DISCOVERY MODE =====
+    #### INPUT DIRECTORY HERE ####
+    # Auto-discover 4D datasets in target_dir (exclude 3D/short)
+   # target_dir = '/Users/cmilbourn/Documents/Sweet_Data/Development_Data/Sweet_Data_BIDS_Dev/INGENIA_phantom/'
+    target_dir = '/Users/cmilbourn/Documents/Sweet_Data/Development_Data_Phase3/nifti/20260526_Phantom_run3_nifti/'
+    manifest_path = '/tmp/phantom_20260518_all_nii_gz.txt'
+    use_manifest_file = os.path.exists(manifest_path)
+    if use_manifest_file:
+        with open(manifest_path, 'r') as mf:
+            candidate_files = sorted([line.strip() for line in mf if line.strip()])
+        print(f"Using manifest file list: {manifest_path}")
+        print(f"Manifest entries: {len(candidate_files)}")
+    else:
+        candidate_files = sorted(glob(os.path.join(target_dir, '*.nii*')))
+        print(f"Using auto-discovery in target dir: {target_dir}")
+    include_all_manifest_entries = use_manifest_file
+    dataset_configs = []
+    # Force TR for this run mode (seconds). Set to None to use JSON/default behavior.
+    default_tr_override = None  # e.g., 2.0 for 2s TR, or None to auto-detect
+    # Force-include specific files even if 3D
+    force_include = []
+    
+    for fpath in candidate_files:
+        if not fpath.endswith(('.nii', '.nii.gz')):
+            continue
+        basename = os.path.basename(fpath)
+        if not include_all_manifest_entries:
+            # Skip brain-extracted and mask files in auto-discovery mode
+            if '_brain' in basename or '_mask' in basename:
+                continue
+            try:
+                img = nib.load(fpath)
+                # Only keep 4D datasets with at least 3 volumes in auto-discovery mode
+                if img.ndim < 4 or img.shape[-1] < 3:
+                    print(f"Skipping (not 4D or too few volumes): {os.path.basename(fpath)} shape={img.shape}")
+                    continue
+            except Exception as e:
+                print(f"Skipping (load error) {fpath}: {e}")
+                continue
+        dataset_configs.append({ 'path': fpath, 'TR': default_tr_override })
+    
+    # Add forced files (if exist) regardless of 4D check
+    for fpath in force_include:
+        if os.path.exists(fpath) and all(d['path'] != fpath for d in dataset_configs):
+            print(f"Force-including (may be 3D): {os.path.basename(fpath)}")
+            dataset_configs.append({ 'path': fpath, 'TR': default_tr_override })
+    # ===== END AUTO-DISCOVERY MODE =====
+    
+    # Verify files exist
     existing_configs = []
     for cfg in dataset_configs:
         fpath = cfg['path']
@@ -1519,11 +1674,20 @@ if __name__ == "__main__":
 
     # Replace with verified list
     dataset_configs = existing_configs
+
+    if not existing_configs:
+        print("No files found to process!")
+        exit(1)
+
+    # Replace with verified list
+    dataset_configs = existing_configs
     
     print(f"\nTotal files to process: {len(dataset_configs)}")
     
     # Create base output directory
-    base_output_dir = '/Users/cmilbourn/Documents/tSNR_check_30dyn/qa_output'
+    # base_output_dir = '/Users/cmilbourn/Documents/tSNR_check_40dyn/qa_output_sub007'
+    # base_output_dir = '/Users/cmilbourn/Documents/tSNR_check_40dyn/qa_output_sub008'
+    base_output_dir = '/Users/cmilbourn/Documents/tSNR_check_40dyn/'
     os.makedirs(base_output_dir, exist_ok=True)
     
     # Create a timestamped session directory
@@ -1593,7 +1757,7 @@ if __name__ == "__main__":
             else:
                 print(f"Skipping dummy removal (not 4D or too few timepoints: ndim={4 if is_4d else 3}, t={t_len})")
 
-            # Crop/rename to 30 dynamics if 4D
+            # Crop/rename to 20 dynamics if 4D
             try:
                 _hdr_probe2 = nib.load(mag_file_to_use)
                 is_4d_post = (_hdr_probe2.ndim == 4)
@@ -1604,19 +1768,19 @@ if __name__ == "__main__":
                 t_len_post = 1
 
             if is_4d_post and t_len_post >= 1:
-                keep_vols = min(30, t_len_post)
-                mag_file_30dyn = os.path.join(OUTPUT_DIR, core_filename + '_30dyn.nii.gz')
+                keep_vols = min(38, t_len_post)
+                mag_file_40dyn = os.path.join(OUTPUT_DIR, core_filename + '_40dyn.nii.gz')
                 print(f"Cropping to first {keep_vols} dynamics with fslroi...")
-                fslroi_cmd_30 = f"fslroi {mag_file_to_use} {mag_file_30dyn} 0 {keep_vols}"
-                result30 = subprocess.run(fslroi_cmd_30, shell=True, capture_output=True, text=True)
-                if result30.returncode != 0 or (not os.path.exists(mag_file_30dyn)):
-                    print(f"Warning: fslroi 30dyn failed or output missing: {result30.stderr}")
-                    print("Proceeding with current file (no 30dyn crop)...")
+                fslroi_cmd_40 = f"fslroi {mag_file_to_use} {mag_file_40dyn} 0 {keep_vols}"
+                result40 = subprocess.run(fslroi_cmd_40, shell=True, capture_output=True, text=True)
+                if result40.returncode != 0 or (not os.path.exists(mag_file_40dyn)):
+                    print(f"Warning: fslroi 40dyn failed or output missing: {result40.stderr}")
+                    print("Proceeding with current file (no 40dyn crop)...")
                 else:
-                    print(f"30-dynamic file created. Using: {mag_file_30dyn}")
-                    mag_file_to_use = mag_file_30dyn
+                    print(f"40-dynamic file created. Using: {mag_file_40dyn}")
+                    mag_file_to_use = mag_file_40dyn
             else:
-                print(f"Skipping 30dyn crop (not 4D or no time dimension: ndim={4 if is_4d_post else 3}, t={t_len_post})")
+                print(f"Skipping 40dyn crop (not 4D or no time dimension: ndim={4 if is_4d_post else 3}, t={t_len_post})")
             
             # Load magnitude data only
             print('Loading magnitude data...')
@@ -1630,13 +1794,13 @@ if __name__ == "__main__":
             mask_data = None
             mag_base = os.path.splitext(os.path.splitext(os.path.basename(mag_file_to_use))[0])[0]
             
-            # Expect mask to match input file name with _brain_mask appended before extension
-            if mag_file_path.endswith('.nii.gz'):
-                expected_mask = mag_file_path.replace('.nii.gz', '_brain_mask.nii.gz')
-            elif mag_file_path.endswith('.nii'):
-                expected_mask = mag_file_path.replace('.nii', '_brain_mask.nii.gz')
+            # Expect mask to match the current file name with _brain_mask appended before extension
+            if mag_file_to_use.endswith('.nii.gz'):
+                expected_mask = mag_file_to_use.replace('.nii.gz', '_brain_mask.nii.gz')
+            elif mag_file_to_use.endswith('.nii'):
+                expected_mask = mag_file_to_use.replace('.nii', '_brain_mask.nii.gz')
             else:
-                expected_mask = mag_file_path + '_brain_mask.nii.gz'
+                expected_mask = mag_file_to_use + '_brain_mask.nii.gz'
             
             if os.path.exists(expected_mask):
                 print(f"Using existing per-file mask: {expected_mask}")
@@ -1682,8 +1846,12 @@ if __name__ == "__main__":
                         mask_data = None
                         missing_mask_failures.append(core_filename)
             
-            # Process and plot data
-            metrics = process_data_nophase(imgm_cla, imgm_cla_affine, core_filename, OUTPUT_DIR, mask_data, TR=tr_override, nifti_path=mag_file_path, nifti_img=nifti_img)
+            # Process and plot data (3D vs 4D)
+            if imgm_cla.ndim == 3:
+                print("Detected 3D dataset: running minimal QA pipeline (no tSNR).")
+                metrics = process_data_single_volume(imgm_cla, imgm_cla_affine, core_filename, OUTPUT_DIR, mask_data, nifti_path=mag_file_path, nifti_img=nifti_img)
+            else:
+                metrics = process_data_nophase(imgm_cla, imgm_cla_affine, core_filename, OUTPUT_DIR, mask_data, TR=tr_override, nifti_path=mag_file_path, nifti_img=nifti_img)
             all_metrics.append(metrics)
             all_output_dirs.append(OUTPUT_DIR)
             # Record successful processing in log

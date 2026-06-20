@@ -9,7 +9,7 @@
 # run for fmri ge standard plus edits 202600122 data
 # coding: utf-8
 # qa_run_nophase.py based on qa_run_nophase.ipynb  
-# example run line: python qa_run_nophase_V9_multisubj_MASK_30dyn.py
+# example run line: python qa_run_nophase_V12_multisubj_MASK_40dyn_V5.py
 # 20251218 add the run for running the tsnr round what ever it is now with Sue F
 #reorder_qa_pptx_by_type.py
 # 20251218 update to run for 20 dynamics for matching MB1
@@ -1571,13 +1571,13 @@ if __name__ == "__main__":
     # Auto-discover 4D datasets in sub007/func (exclude 3D/short)
     # target_dir = '/Users/cmilbourn/Documents/Sweet_Data/Development_Data/Sweet_Data_BIDS_Dev/sub007/sub007-visit002/'
     # target_dir = '/Users/cmilbourn/Documents/Sweet_Data/Development_Data/Sweet_Data_BIDS_Dev/sub008/func'
-    target_dir = '/Users/cmilbourn/Documents/Sweet_Data/Development_Data/Sweet_Data_BIDS_Dev/sub009/func'
+    target_dir = '/Users/cmilbourn/Documents/Sweet_Data/Development_Data_Phase3/nifti/20260512_Phantom_testing_tSNR/'
     candidate_files = sorted(glob(os.path.join(target_dir, '*.nii*')))
     dataset_configs = []
     # Force-include specific files even if 3D
-    force_include = [
-        '/Users/cmilbourn/Documents/Sweet_Data/Development_Data/Sweet_Data_BIDS_Dev/sub009/func/sub009_2_Sweet_20260130_tsnr_dev_20260130133041_2_A_MB1_As2_epiRTSPMIC.nii.gz'
-    ]
+    #force_include = [
+        #'/Users/cmilbourn/Documents/Sweet_Data/Development_Data/Sweet_Data_BIDS_Dev/sub009/func/sub009_2_Sweet_20260130_tsnr_dev_20260130133041_2_A_MB1_As2_epiRTSPMIC.nii.gz'
+    #]
 
     for fpath in candidate_files:
         if not fpath.endswith(('.nii', '.nii.gz')):

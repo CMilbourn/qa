@@ -17,9 +17,9 @@ function [byteswritten,hdr]=cbiWriteNifti(fname,data,hdr,prec,subset,short_nan);
 %             representable number) reserving -32767..32767 for scaled data; otherwise will save NaN as 0.
 %             Default is 1 (use -32768 as NaN).
   
-  
 
-[pathstr,bname,ext,ver]=fileparts(fname);
+  % Modern MATLAB fileparts supports 3 outputs (path, name, ext).
+  [pathstr,bname,ext]=fileparts(fname);
   
 switch (ext)
  case '.nii'  
@@ -201,12 +201,12 @@ function data=convertData(data,hdr,short_nan);
     
   % Change NaNs for non-floating point datatypes
   switch (hdr.matlab_datatype)    
-   case {'binary','uint8','uint16','uint32','uint64','int8','int16','int32','int64'}
-    data(isnan(data))=0;
    case 'int16'
     if (short_nan)
       data(isnan(data))=-32768;
     else
       data(isnan(data))=0;
     end
+   case {'binary','uint8','uint16','uint32','uint64','int8','int32','int64'}
+    data(isnan(data))=0;
   end

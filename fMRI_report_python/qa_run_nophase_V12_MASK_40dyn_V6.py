@@ -1,6 +1,6 @@
 #!/usr/bin/env python
-
-#qa_run_nophase_V10_multisubj_MASK_40dyn.py
+# go to '    target_dir ' for inputting the data file paths
+#qa_run_nophase_V12_MASK_40dyn_V6.py
 # example run line: source venv/bin/activate && python qa_run_nophase_V12_MASK_40dyn_V6.py
 # REQUIREMENTS: conda install -y numpy matplotlib nibabel scipy python-pptx pandas
 # REQUIREMENTS (recommended venv):
@@ -1614,30 +1614,42 @@ if __name__ == "__main__":
     #### INPUT DIRECTORY HERE ####
     # Auto-discover 4D datasets in target_dir (exclude 3D/short)
    # target_dir = '/Users/cmilbourn/Documents/Sweet_Data/Development_Data/Sweet_Data_BIDS_Dev/INGENIA_phantom/'
-    target_dir = '/Users/cmilbourn/Documents/Sweet_Data/Development_Data/nifti/INGENIA/sub010_dev/sweet_sub10_tsnr/'
-    candidate_files = sorted(glob(os.path.join(target_dir, '*.nii*')))
+   # use the '/func/' folder if possible 
+    target_dir = '/Users/cmilbourn/Documents/Sweet_Data/Development_Data_Phase3/nifti/20260620_phantomrun_5/Run1/'
+    manifest_path = '/tmp/phantom_20260518_all_nii_gz.txt'
+    use_manifest_file = os.path.exists(manifest_path)
+    if use_manifest_file:
+        with open(manifest_path, 'r') as mf:
+            candidate_files = sorted([line.strip() for line in mf if line.strip()])
+        print(f"Using manifest file list: {manifest_path}")
+        print(f"Manifest entries: {len(candidate_files)}")
+    else:
+        candidate_files = sorted(glob(os.path.join(target_dir, '*.nii*')))
+        print(f"Using auto-discovery in target dir: {target_dir}")
+    include_all_manifest_entries = use_manifest_file
     dataset_configs = []
     # Force TR for this run mode (seconds). Set to None to use JSON/default behavior.
-    default_tr_override = 2.0
+    default_tr_override = None  # e.g., 2.0 for 2s TR, or None to auto-detect
     # Force-include specific files even if 3D
     force_include = []
     
     for fpath in candidate_files:
         if not fpath.endswith(('.nii', '.nii.gz')):
             continue
-        # Skip brain-extracted and mask files
         basename = os.path.basename(fpath)
-        if '_brain' in basename or '_mask' in basename:
-            continue
-        try:
-            img = nib.load(fpath)
-            # Only keep 4D datasets with at least 3 volumes
-            if img.ndim < 4 or img.shape[-1] < 3:
-                print(f"Skipping (not 4D or too few volumes): {os.path.basename(fpath)} shape={img.shape}")
+        if not include_all_manifest_entries:
+            # Skip brain-extracted and mask files in auto-discovery mode
+            if '_brain' in basename or '_mask' in basename:
                 continue
-        except Exception as e:
-            print(f"Skipping (load error) {fpath}: {e}")
-            continue
+            try:
+                img = nib.load(fpath)
+                # Only keep 4D datasets with at least 3 volumes in auto-discovery mode
+                if img.ndim < 4 or img.shape[-1] < 3:
+                    print(f"Skipping (not 4D or too few volumes): {os.path.basename(fpath)} shape={img.shape}")
+                    continue
+            except Exception as e:
+                print(f"Skipping (load error) {fpath}: {e}")
+                continue
         dataset_configs.append({ 'path': fpath, 'TR': default_tr_override })
     
     # Add forced files (if exist) regardless of 4D check
