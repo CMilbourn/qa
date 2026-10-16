@@ -1912,7 +1912,7 @@ if __name__ == "__main__":
     # Auto-discover 4D datasets in target_dir (exclude 3D/short)
    # target_dir = '/Users/cmilbourn/Documents/Sweet_Data/Development_Data/Sweet_Data_BIDS_Dev/INGENIA_phantom/'
    # use the '/func/' folder if possible 
-    target_dir = '/Users/cmilbourn/Documents/Sweet_Data/Development_Data_Phase3/nifti/3315-118'
+    target_dir = '/Users/cmilbourn/Documents/Sweet_Data/Development_Data_Phase3/nifti/3315-118/'
     manifest_path = '/tmp/phantom_20260518_all_nii_gz.txt'
     use_manifest_file = os.path.exists(manifest_path)
     if use_manifest_file:

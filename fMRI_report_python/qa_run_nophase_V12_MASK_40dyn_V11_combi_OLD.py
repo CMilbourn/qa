@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # go to '    target_dir ' for inputting the data file paths
 #qa_run_nophase_V12_MASK_40dyn_V6.py
-# example run line: source venv/bin/activate && python qa_run_nophase_V12_MASK_40dyn_V11_combi.py
+# example run line: source venv/bin/activate && python qa_run_nophase_V12_MASK_40dyn_V11_combi_OLD.py
 # REQUIREMENTS: conda install -y numpy matplotlib nibabel scipy python-pptx pandas
 # REQUIREMENTS (recommended venv):
 #   /opt/homebrew/bin/python3 -m venv /Users/cmilbourn/Documents/GitHub/qa/venv
@@ -711,10 +711,10 @@ def process_data_nophase(imgm_cla, imgm_affine, core_filename, output_dir, mask_
     plt.savefig(output_path, dpi=300)  # Save the montage as a PNG file with 300 dpi resolution
 
     ############################## tSNR
-        # Run tSNR on volumes 1-40 (indices 0-39), or all available volumes if fewer.
-        tsnr_volume_count = min(40, imgm_cla.shape[3])
-        imgm_cla_nn = imgm_cla[:, :, :, :tsnr_volume_count]
-        print(f"Running tSNR on first {tsnr_volume_count} volumes.")
+    # Run tSNR on volumes 1-40 (indices 0-39), or all available volumes if fewer.
+    tsnr_volume_count = min(30, imgm_cla.shape[3]) # change manually from 40 to min 30 volumes to run for phase 3 # 20261014
+    imgm_cla_nn = imgm_cla[:, :, :, :tsnr_volume_count]
+    print(f"Running tSNR on first {tsnr_volume_count} volumes.")
 
     # Save as NIFTI 
     tsnr_obj_cla = snr.Tsnr(imgm_cla_nn, imgm_affine)
@@ -1903,7 +1903,7 @@ if __name__ == "__main__":
     # Auto-discover 4D datasets in target_dir (exclude 3D/short)
    # target_dir = '/Users/cmilbourn/Documents/Sweet_Data/Development_Data/Sweet_Data_BIDS_Dev/INGENIA_phantom/'
    # use the '/func/' folder if possible 
-    target_dir = '/Users/cmilbourn/Documents/Sweet_Data/Development_Data_Phase3/BIDS/phantom/phantom_run11/'
+    target_dir = '/Users/cmilbourn/Documents/Sweet_Data/Development_Data_Phase3/nifti/3315-118/'
     manifest_path = '/tmp/phantom_20260518_all_nii_gz.txt'
     use_manifest_file = os.path.exists(manifest_path)
     if use_manifest_file:
@@ -2057,7 +2057,7 @@ if __name__ == "__main__":
                 t_len_post = 1
 
             if is_4d_post and t_len_post >= 1:
-                 keep_vols = min(40, t_len_post)
+                keep_vols = min(40, t_len_post)
                 mag_file_40dyn = os.path.join(OUTPUT_DIR, core_filename + '_40dyn.nii.gz')
                 print(f"Cropping to first {keep_vols} dynamics with fslroi...")
                 fslroi_cmd_40 = f"fslroi {mag_file_to_use} {mag_file_40dyn} 0 {keep_vols}"
